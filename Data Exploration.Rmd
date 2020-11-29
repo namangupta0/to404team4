@@ -1,6 +1,6 @@
 ---
 title: "Data Exploration"
-author: "Naman Gupta"
+authors: "Naman Gupta, Brian Zhao, and Dawson Wang"
 date: "11/29/2020"
 output: html_document
 ---
