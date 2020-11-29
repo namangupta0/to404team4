@@ -1,0 +1,53 @@
+---
+title: "Data Exploration"
+author: "Naman Gupta"
+date: "11/29/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#commenting out for knitting purposes
+```{r}
+library(data.table)
+library(dplyr)
+library(ggplot2)
+#allfiles <- list.files()
+#csvfiles <- allfiles[1:12]
+#csvfiles
+sample_data <- read.csv("SampleCitiBike.csv")
+```
+
+#commenting out for knitting purposes
+```{r, cache=TRUE}
+#data <- rbindlist(lapply(csvfiles,fread))
+```
+
+#commenting out for knitting purposes
+```{r, cache=TRUE}
+#create random 5% sample of data
+#sample_data <- sample_frac(data, 0.05)
+```
+
+#cleaning the data
+```{r, cache=TRUE}
+#view summary and structure
+summary(sample_data)
+str(sample_data)
+
+#convert columns to factors as needed
+sample_data$`start station id` <- as.factor(sample_data$`start station id`)
+sample_data$`start station name` <- as.factor(sample_data$`start station name`)
+sample_data$`end station id` <- as.factor(sample_data$`end station id`)
+sample_data$`end station name` <- as.factor(sample_data$`end station name`)
+sample_data$bikeid <- as.factor(sample_data$bikeid)
+sample_data$usertype <- as.factor(sample_data$usertype)
+sample_data$gender <- as.factor(sample_data$gender)
+sample_data$gender <- as.factor(ifelse(sample_data$gender == "0", "Unknown", ifelse(sample_data$gender == "1", "Male", "Female")))
+
+#review summary and structure
+summary(sample_data)
+str(sample_data)
+```
