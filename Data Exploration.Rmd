@@ -10,6 +10,31 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 #commenting out for knitting purposes
+```{r, eval = FALSE}
+library(data.table)
+library(dplyr)
+library(ggplot2)
+allfiles <- list.files()
+csvfiles <- allfiles[2:13]
+csvfiles
+#sample_data <- read.csv("SampleCitiBike.csv")
+```
+
+#commenting out for knitting purposes
+```{r, cache=TRUE, eval = FALSE}
+data <- rbindlist(lapply(csvfiles,fread))
+```
+
+#commenting out for knitting purposes
+```{r, cache=TRUE, eval = FALSE}
+#create random 5% sample of data
+sample_data <- sample_frac(data, 0.01)
+write.csv(sample_data,'sample_01_data.csv')
+```
+
+
+
+#commenting out for knitting purposes
 ```{r}
 library(data.table)
 library(dplyr)
@@ -28,7 +53,7 @@ sample_data <- read.csv("SampleCitiBike.csv")
 #commenting out for knitting purposes
 ```{r, cache=TRUE}
 #create random 5% sample of data
-#sample_data <- sample_frac(data, 0.05)
+#sample_data <- sample_frac(data, 0.01)
 ```
 
 #cleaning the data
