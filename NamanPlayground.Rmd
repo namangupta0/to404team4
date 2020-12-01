@@ -17,14 +17,20 @@ library(ggplot2)
 
 ```{r}
 masterdata <- read.csv("MASTERsample_01_data.csv")
-summary(masterdata)
+sample_01_data <- read.csv("sample_01_data.csv")
+masterdata$newStartTime <- sample_01_data$starttime
+masterdata$newStopTime <- sample_01_data$stoptime
+write.csv(masterdata,"new_MASTER_01_data.csv")
+  
+summary(read.csv("sample_01_data.csv"))
 str(masterdata)
 #is the date data gone?
-
+summary(read.csv("sample_01_data.csv"))
 #convert columns to factors as needed
 
 masterdata$bikeid <- as.factor(masterdata$bikeid)
 masterdata$gender <- as.factor(masterdata$gender)
+
 masterdata$gender <- as.factor(ifelse(masterdata$gender == "0", "Unknown", ifelse(masterdata$gender == "1", "Male", "Female")))
 masterdata$X <- NULL
 summary(masterdata)
