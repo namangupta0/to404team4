@@ -24,15 +24,24 @@ library(ggplot2)
 #TEAM CLEANING DATA
 ```{r}
 master <- read.csv("new_MASTER_01_data.csv")
+master$starttime <- NULL
+master$stoptime <- NULL
+write.csv(master,"new_MASTER_01_data.csv")
+#cleaning
 master$bikeid <- as.factor(master$bikeid)
 master$gender <- as.factor(master$gender)
+
 
 master$gender <- as.factor(ifelse(master$gender == "0", "Unknown", ifelse(master$gender == "1", "Male", "Female")))
 master$X.1 <- NULL
 master$X <- NULL
+master$starttime <- NULL
+master$stoptime <- NULL
+
 str(master)
 summary(master)
 
+#distance
 masterstart <- as.data.frame(matrix(nrow = 205517, ncol = 0))
 masterstart$startlong <- as.numeric(master$start.station.longitude)
 masterstart$startlat <- as.numeric(master$start.station.latitude)
@@ -45,6 +54,11 @@ master$distanceH <- distHaversine(masterstart, masterend, r=6378137)
 
 str(master)
 summary(master)
+
+#date
+str(master$newStartTime)
+summary(master)
+
 ```
 
 
