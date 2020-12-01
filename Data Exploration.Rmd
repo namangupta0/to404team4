@@ -30,6 +30,7 @@ data <- rbindlist(lapply(csvfiles,fread))
 #create random 5% sample of data
 sample_data <- sample_frac(data, 0.01)
 write.csv(sample_data,'sample_01_data.csv')
+str(read.csv("sample_01_data.csv"))
 ```
 
 
