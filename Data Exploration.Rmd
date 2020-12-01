@@ -24,9 +24,13 @@ library(ggplot2)
 #TEAM CLEANING DATA
 ```{r}
 master <- read.csv("new_MASTER_01_data.csv")
-master$starttime <- NULL
-master$stoptime <- NULL
-write.csv(master,"new_MASTER_01_data.csv")
+#master$X.2 <- NULL
+#master$X.1 <- NULL
+#master$X <- NULL
+#master$starttime <- NULL
+#master$stoptime <- NULL
+#write.csv(master,"new_MASTER_01_data.csv")
+
 #cleaning
 master$bikeid <- as.factor(master$bikeid)
 master$gender <- as.factor(master$gender)
