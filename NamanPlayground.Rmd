@@ -47,6 +47,7 @@ scatter
 ```
 >The variables weight and hip are strongly positively correlated. Generally, females have higher hip sizes than males with relation to weight.
 
+
 #Plot#2: Experiement with the scatter plot you just built. Try these things:size,alpha,shape,Adding another layer of geom_smooth
 ```{r}
 baseplot1 <- ggplot(data=diabetes, aes(x=weight, y=hip, colour=gender)) + geom_point(size=2, alpha=1) + geom_smooth()
