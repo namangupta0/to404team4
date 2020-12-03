@@ -63,6 +63,9 @@ summary(master)
 str(master$newStartTime)
 summary(master)
 
+master$newStartTime = as.POSIXct(strptime(master$newStartTime, "%Y-%m-%d %H:%M:%S"))
+master$newStopTime = as.POSIXct(strptime(master$newStopTime, "%Y-%m-%d %H:%M:%S"))
+
 ```
 
 

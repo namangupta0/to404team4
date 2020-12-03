@@ -13,19 +13,21 @@ knitr::opts_chunk$set(echo = TRUE)
 library(data.table)
 library(dplyr)
 library(ggplot2)
+library(geosphere)
+library(lubridate)
 ```
 
 ```{r}
-masterdata <- read.csv("MASTERsample_01_data.csv")
-sample_01_data <- read.csv("sample_01_data.csv")
-masterdata$newStartTime <- sample_01_data$starttime
-masterdata$newStopTime <- sample_01_data$stoptime
-write.csv(masterdata,"new_MASTER_01_data.csv")
+masterdata <- read.csv("new_MASTER_01_data.csv")
+#sample_01_data <- read.csv("sample_01_data.csv")
+#masterdata$newStartTime <- sample_01_data$starttime
+#masterdata$newStopTime <- sample_01_data$stoptime
+#write.csv(masterdata,"new_MASTER_01_data.csv")
   
-summary(read.csv("sample_01_data.csv"))
+summary(masterdata)
 str(masterdata)
 #is the date data gone?
-summary(read.csv("sample_01_data.csv"))
+#summary(read.csv("sample_01_data.csv"))
 #convert columns to factors as needed
 
 masterdata$bikeid <- as.factor(masterdata$bikeid)
@@ -33,89 +35,98 @@ masterdata$gender <- as.factor(masterdata$gender)
 
 masterdata$gender <- as.factor(ifelse(masterdata$gender == "0", "Unknown", ifelse(masterdata$gender == "1", "Male", "Female")))
 masterdata$X <- NULL
-summary(masterdata)
+masterdata$starttime <- NULL
+masterdata$stoptime <- NULL
+
+masterdata$newStartTime = as.POSIXct(strptime(masterdata$newStartTime, "%Y-%m-%d %H:%M:%S"))
+masterdata$newStopTime = as.POSIXct(strptime(masterdata$newStopTime, "%Y-%m-%d %H:%M:%S"))
+
+masterdata$newStartDate <- as.Date(masterdata$newStartTime)
+masterdata$newStopDate <- as.Date(masterdata$newStopTime)
+
+
+#distance
+masterstart <- as.data.frame(matrix(nrow = 205517, ncol = 0))
+masterstart$startlong <- as.numeric(masterdata$start.station.longitude)
+masterstart$startlat <- as.numeric(masterdata$start.station.latitude)
+
+masterend <- as.data.frame(matrix(nrow = 205517, ncol = 0))
+masterend$endlong <- masterdata$end.station.longitude
+masterend$endlat <- masterdata$end.station.latitude
+
+masterdata$distanceH <- distHaversine(masterstart, masterend, r=6378137)
+
+masterend <- NULL
+masterstart <- NULL
+
 str(masterdata)
+summary(masterdata)
 ```
-#Plot #1: A scatter plot with weight on x-axis, hip on y-axis, and gender as the color of points. What do you see - write a quick summary of insights from this plot.
+
 ```{r}
 #average precip per month
 #facet wrap month, against count of number of rides as y variable. x = average precip, colour = gender
 #categorize birth year into age groups. Facet wrap or colour by age groups
 #rain vs trip length (end time - start time)
 #bar plot of busy/not-busy stations on rainy days
-
-
 #randomly try the same plot across a few select dates
 
 
-scatter <- ggplot(data=masterdata, aes(x=PRCP, y=, colour=gender)) + geom_point(size=2, alpha=1)
-scatter
+ggplot(data=masterdata, aes(x=newStartDate, y=tripduration, colour=gender)) + geom_point()
+
+#newStartDate vs tripduration by gender
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=newStartDate, y=tripduration, colour=gender)) + geom_point()
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=newStartDate, y=tripduration, colour=gender)) + geom_smooth()
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=newStartDate, y=tripduration, colour=gender)) + geom_violin()
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=newStartDate, y=tripduration, colour=gender)) + geom_boxplot()
+
+#newStartDate vs tripduration by usertype
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=newStartDate, y=tripduration, colour=usertype)) + geom_point()
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=newStartDate, y=tripduration, colour=usertype)) + geom_smooth()
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=newStartDate, y=tripduration, colour=usertype)) + geom_violin()
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=newStartDate, y=tripduration, colour=usertype)) + geom_boxplot()
 ```
->The variables weight and hip are strongly positively correlated. Generally, females have higher hip sizes than males with relation to weight.
-
-
-#Plot#2: Experiement with the scatter plot you just built. Try these things:size,alpha,shape,Adding another layer of geom_smooth
 ```{r}
-baseplot1 <- ggplot(data=diabetes, aes(x=weight, y=hip, colour=gender)) + geom_point(size=2, alpha=1) + geom_smooth()
-baseplot1
+#prcp vs tripduration by gender
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=tripduration, colour=gender)) + geom_point()
 
-baseplot2 <- ggplot(data=diabetes, aes(x=weight, y=hip, colour=gender)) + geom_point(size=2, alpha=1) + geom_smooth(method = "lm")
-baseplot2
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=tripduration, colour=gender)) + geom_smooth()
 
-baseplot3 <- ggplot(data=diabetes, aes(x=weight, y=hip, colour=gender)) + geom_point(size=50, alpha=1) + geom_smooth(method = "lm")
-baseplot3
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=tripduration, colour=gender)) + geom_violin()
 
-baseplot4 <- ggplot(data=diabetes, aes(x=weight, y=hip, colour=gender)) + geom_point(size=2, alpha=1)
-baseplot4
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=tripduration, colour=gender)) + geom_boxplot()
 
-baseplot5 <- ggplot(data=diabetes, aes(x=weight, y=hip, colour=gender)) + geom_point(size=2, alpha=1)+ geom_smooth(method = "gam")
-baseplot5
+#prcp vs tripduration by usertype
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=tripduration, colour=usertype)) + geom_point()
 
-baseplot6 <- ggplot(data=diabetes, aes(x=weight, y=hip, colour=gender)) + geom_point(size=2, alpha=1)+ geom_smooth(method = "glm")
-baseplot6
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=tripduration, colour=usertype)) + geom_smooth()
 
-baseplot7 <- ggplot(data=diabetes, aes(x=weight, y=hip, colour=gender)) + geom_point(size=2, alpha=1)+ geom_smooth(method = "loess")
-baseplot7
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=tripduration, colour=usertype)) + geom_violin()
 
-baseplot8 <- ggplot(data=diabetes, aes(x=weight, y=hip, colour=gender)) + geom_point(size=2, alpha=1)+ geom_smooth(method = "lm") + geom_smooth()
-baseplot8
-
-baseplot9 <- ggplot(data=diabetes, aes(x=weight, y=hip, colour=gender)) + geom_point(size=2, alpha=1, shape = 3) + geom_smooth(method = "lm") + geom_smooth()
-baseplot9
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=tripduration, colour=usertype)) + geom_boxplot()
 ```
->We experimented with the various things listed on the assignment. We found that adding an extra geom_smooth() results in an additional line on the graphic. After a certain size level, we found that it does not make sense to have very large sized points, as they appear to simply merge into each other.
-
-#Plot#3: Build a Box Plot with gender on x-axis and chol on y-axis
 ```{r}
-boxplot <- ggplot(data=diabetes, aes(x=gender, y=chol, colour=gender)) + geom_boxplot()
-boxplot
-```
->This shows us the distribution of the chol variable separated by the gender variable. It appears that both genders have very similar distributions.
+#prcp vs tripduration by gender
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=distanceH, colour=gender)) + geom_point()
 
-#Plot#4: Change the Box Plot to a Violin Plot
-```{r}
-violin <- ggplot(data=diabetes, aes(x=gender, y=chol, colour=gender)) + geom_violin()
-violin
-```
->This shows us that Cholesterol distribution for females and males is centered around 200, with females having higher cholesterol on average and men having lower cholesterol.
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=distanceH, colour=gender)) + geom_smooth()
 
-#Plot#5: Built a histogram with glyhb as the variable plotted
-```{r}
-histogram <- ggplot(data=diabetes, aes(x=glyhb)) + geom_histogram()
-histogram
-```
->In this dataset, we see the highest count of people with glyhb levrls centering around a value of 5. The number of people with higher levels drastically decreases as glyhb values increase.
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=distanceH, colour=gender)) + geom_violin()
 
-#Plot#6: Change the histogram to a density plot
-```{r}
-density <- ggplot(data=diabetes, aes(x=glyhb)) + geom_density()
-density
-```
->Here we can see as the hemoglobin's density is heavy around a value of 5 and then drastically decreases as the hemoglobin increases.
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=distanceH, colour=gender)) + geom_boxplot()
 
+#prcp vs tripduration by usertype
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=distanceH, colour=usertype)) + geom_point()
 
-#Plot#7: Build a Bar Plot with variable frame on x-axis
-```{r}
-barplot <- ggplot(data=diabetes, aes(x=frame)) + geom_bar()
-barplot
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=distanceH, colour=usertype)) + geom_smooth()
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=distanceH, colour=usertype)) + geom_violin()
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=distanceH, colour=usertype)) + geom_boxplot()
 ```
