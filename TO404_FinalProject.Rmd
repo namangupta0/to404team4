@@ -1,0 +1,94 @@
+---
+title: "TO404_FinalProject"
+author: "Brian Zhao"
+date: "12/4/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# TO 404 Final Project
+
+## Libraries
+```{r}
+library(dplyr)
+library(ggplot2)
+library(geosphere)
+library(data.table)
+```
+
+## Read Data
+```{r, cache=TRUE, eval = FALSE}
+# Read Original CitiBike Data
+sampleData <- read.csv("SampleCitiBike.csv")
+# Create 1% Random Sample
+sampleData_01 <- sample_frac(data, 0.01)
+# Write to New CSV
+write.csv(sampleData_01, 'sample_01_data.csv')
+# Weather Data Manually Appended in new_MASTER_01_data.csv
+```
+
+```{r}
+master <- read.csv("new_MASTER_01_data.csv")
+```
+
+## Clean Data
+```{r}
+# Explore Data
+str(master)
+summary(master)
+
+# Remove Identifier Column
+master$X <- NULL
+
+# Assign Factors
+master$bikeid <- as.factor(master$bikeid)
+master$gender <- as.factor(master$gender)
+master$gender <- as.factor(ifelse(master$gender == "0", "Unknown", ifelse(master$gender == "1", "Male", "Female")))
+
+# Distance
+masterstart <- as.data.frame(matrix(nrow = 205517, ncol = 0))
+masterstart$startlong <- as.numeric(master$start.station.longitude)
+masterstart$startlat <- as.numeric(master$start.station.latitude)
+
+masterend <- as.data.frame(matrix(nrow = 205517, ncol = 0))
+masterend$endlong <- master$end.station.longitude
+masterend$endlat <- master$end.station.latitude
+
+master$distanceH <- distHaversine(masterstart, masterend, r=6378137)
+
+# Date
+master$newStartTime = as.POSIXct(strptime(master$newStartTime, "%Y-%m-%d %H:%M:%S"))
+master$newStopTime = as.POSIXct(strptime(master$newStopTime, "%Y-%m-%d %H:%M:%S"))
+
+# Check Data
+str(master)
+summary(master)
+```
+
+# Weather
+
+## Snow
+*Effects of Snow on:*
+- Ride Distance
+```{r}
+
+```
+
+- Ride Length
+```{r}
+
+```
+
+- Total Rides
+```{r}
+
+```
+
+- Demographics (Female vs. Male, Age)
+```{r}
+
+```
+
