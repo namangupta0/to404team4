@@ -63,6 +63,9 @@ master$distanceH <- distHaversine(masterstart, masterend, r=6378137)
 master$newStartTime = as.POSIXct(strptime(master$newStartTime, "%Y-%m-%d %H:%M:%S"))
 master$newStopTime = as.POSIXct(strptime(master$newStopTime, "%Y-%m-%d %H:%M:%S"))
 
+# Snow
+master$roundedSNOW <- floor(master$SNOW)
+
 # Check Data
 str(master)
 summary(master)
@@ -75,16 +78,30 @@ summary(master)
 - Ride Distance (Customer vs. Subscriber)
 ```{r}
 ggplot(data=master[master$distanceH < 10000,], aes(x=SNOW, y=distanceH, colour=usertype)) + geom_smooth()
+
+ggplot(data=master[master$distanceH < 10000,], aes(x=SNOW, y=distanceH, colour=usertype)) + geom_point() + geom_jitter()
 ```
 
-- Ride Length
+- Ride Duration
 ```{r}
-ggplot(data=master[master$distanceH < 10000,], aes(x=SNOW, y=tripduration, colour=usertype)) + geom_smooth()
+ggplot(data=master[master$tripduration < 10000,], aes(x=SNOW, y=tripduration, colour=usertype)) + geom_smooth()
+
+ggplot(data=master[master$tripduration < 10000,], aes(x=SNOW, y=tripduration, colour=usertype)) + geom_point()
+
+totalRides <- tapply(master$tripduration, master$SNOW, mean, na.rm = TRUE)
+barplot(totalRides)
 ```
 
 - Total Rides
 ```{r}
-totalRides <- tapply(master$bikeid, master$SNOW, mean, na.rm = TRUE)
+# Raw Data
+ggplot(data=master, aes(x=SNOW)) + geom_bar()
+ggplot(data=master[master$SNOW > 0, ], aes(x=SNOW)) + geom_bar()
+
+# Rounded Values
+ggplot(data=master, aes(x=roundedSNOW)) + geom_bar()
+ggplot(data=master[master$roundedSNOW > 0, ], aes(x=roundedSNOW)) + geom_bar()
+
 ```
 
 - Demographics (Female vs. Male, Age)
