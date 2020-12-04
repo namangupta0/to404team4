@@ -44,7 +44,6 @@ masterdata$newStopTime = as.POSIXct(strptime(masterdata$newStopTime, "%Y-%m-%d %
 masterdata$newStartDate <- as.Date(masterdata$newStartTime)
 masterdata$newStopDate <- as.Date(masterdata$newStopTime)
 
-
 #distance
 masterstart <- as.data.frame(matrix(nrow = 205517, ncol = 0))
 masterstart$startlong <- as.numeric(masterdata$start.station.longitude)
@@ -59,6 +58,17 @@ masterdata$distanceH <- distHaversine(masterstart, masterend, r=6378137)
 masterend <- NULL
 masterstart <- NULL
 
+#new age classification
+masterdata$agegroup <- as.factor(ifelse(masterdata$birth.year >= 2000, "GenZ", ifelse(masterdata$birth.year >= 1981, "Millennial", ifelse(masterdata$birth.year >= 1965, "GenX", ifelse(masterdata$birth.year >= 1946, "Boomer", ifelse(masterdata$birth.year >= 1928, "Silent", "VeryOld"))))))
+
+#order factor levels for visualizations
+masterdata$agegroup <- factor(masterdata$agegroup, levels = c("GenZ", "Millennial", "GenX", "Boomer", "Silent", "VeryOld"))
+
+#new columns for months for visualizations
+masterdata$startMonth <- month(masterdata$newStartDate)
+masterdata$stopMonth <- month(masterdata$newStopDate)
+masterdata$startMonthFactor <- as.factor(month(masterdata$newStartDate))
+masterdata$stopMonthFactor <- as.factor(month(masterdata$newStopDate))
 str(masterdata)
 summary(masterdata)
 ```
@@ -92,6 +102,7 @@ ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=newStartDate, y=
 
 ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=newStartDate, y=tripduration, colour=usertype)) + geom_boxplot()
 ```
+
 ```{r}
 #prcp vs tripduration by gender
 ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=tripduration, colour=gender)) + geom_point()
@@ -111,6 +122,7 @@ ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=tripdura
 
 ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=tripduration, colour=usertype)) + geom_boxplot()
 ```
+
 ```{r}
 #prcp vs tripduration by gender
 ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=distanceH, colour=gender)) + geom_point()
@@ -129,4 +141,44 @@ ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=distance
 ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=distanceH, colour=usertype)) + geom_violin()
 
 ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=distanceH, colour=usertype)) + geom_boxplot()
+```
+
+```{r}
+averagePRCPMonthly <- tapply(masterdata$PRCP,masterdata$startMonthFactor,mean,)
+plot(averagePRCPMonthly,xlab="Month",ylab="Average PRCP")
+
+averageTripDurationMonthly <- tapply(masterdata$tripduration,masterdata$startMonthFactor,mean,)
+plot(averageTripDurationMonthly,xlab="Month",ylab="Average Trip Duration")
+
+numTripsMonthly <- table(masterdata$startMonth)
+
+ggplot(,aes(x=averagePRCPMonthly, y=averageTripDurationMonthly)) + geom_point()
+
+ggplot(,aes(x=averagePRCPMonthly, y=numTripsMonthly)) + geom_point()
+
+ggplot(data=masterdata, aes(x=PRCP,y=tripduration)) + geom_point() + facet_wrap(~ startMonthFactor)
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP,y=tripduration)) + geom_smooth() + facet_wrap(~ startMonthFactor)
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP,y=tripduration,colour=usertype)) + geom_smooth() + facet_wrap(~ startMonthFactor)
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP,y=tripduration,colour=gender)) + geom_smooth() + facet_wrap(~ startMonthFactor)
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP,y=tripduration,colour=gender)) + geom_smooth() + facet_wrap(~ usertype)
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP,y=tripduration,colour=usertype)) + geom_smooth() + facet_wrap(~ gender)
+
+```
+```{r}
+ggplot(data=masterdata, aes(x=PRCP,y=distanceH)) + geom_point() + facet_wrap(~ startMonthFactor)
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP,y=distanceH)) + geom_smooth() + facet_wrap(~ startMonthFactor)
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP,y=distanceH,colour=usertype)) + geom_smooth() + facet_wrap(~ startMonthFactor)
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP,y=distanceH,colour=gender)) + geom_smooth() + facet_wrap(~ startMonthFactor)
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP,y=distanceH,colour=gender)) + geom_smooth() + facet_wrap(~ usertype)
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP,y=distanceH,colour=usertype)) + geom_smooth() + facet_wrap(~ gender)
 ```
