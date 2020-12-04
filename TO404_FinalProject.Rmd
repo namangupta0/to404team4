@@ -72,19 +72,19 @@ summary(master)
 
 ## Snow
 *Effects of Snow on:*
-- Ride Distance
+- Ride Distance (Customer vs. Subscriber)
 ```{r}
-
+ggplot(data=master[master$distanceH < 10000,], aes(x=SNOW, y=distanceH, colour=usertype)) + geom_smooth()
 ```
 
 - Ride Length
 ```{r}
-
+ggplot(data=master[master$distanceH < 10000,], aes(x=SNOW, y=tripduration, colour=usertype)) + geom_smooth()
 ```
 
 - Total Rides
 ```{r}
-
+totalRides <- tapply(master$bikeid, master$SNOW, mean, na.rm = TRUE)
 ```
 
 - Demographics (Female vs. Male, Age)
