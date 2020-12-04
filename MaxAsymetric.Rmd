@@ -1,0 +1,181 @@
+---
+title: "MaxAsymetric"
+author: "Maxwell Cornellier"
+date: "12/3/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(data.table)
+library(dplyr)
+library(ggplot2)
+library(geosphere)
+library(ggmap)
+library(lubridate)
+```
+
+
+```{r}
+masterdata <- read.csv("new_MASTER_01_data.csv")
+#sample_01_data <- read.csv("sample_01_data.csv")
+#masterdata$newStartTime <- sample_01_data$starttime
+#masterdata$newStopTime <- sample_01_data$stoptime
+#write.csv(masterdata,"new_MASTER_01_data.csv")
+  
+summary(masterdata)
+str(masterdata)
+
+#is the date data gone?
+#summary(read.csv("sample_01_data.csv"))
+#convert columns to factors as needed
+
+masterdata$bikeid <- as.factor(masterdata$bikeid)
+masterdata$gender <- as.factor(masterdata$gender)
+
+masterdata$gender <- as.factor(ifelse(masterdata$gender == "0", "Unknown", ifelse(masterdata$gender == "1", "Male", "Female")))
+masterdata$X <- NULL
+masterdata$starttime <- NULL
+masterdata$stoptime <- NULL
+
+masterdata$newStartTime = as.POSIXct(strptime(masterdata$newStartTime, "%Y-%m-%d %H:%M:%S"))
+masterdata$newStopTime = as.POSIXct(strptime(masterdata$newStopTime, "%Y-%m-%d %H:%M:%S"))
+
+masterdata$newStartDate <- as.Date(masterdata$newStartTime)
+masterdata$newStopDate <- as.Date(masterdata$newStopTime)
+
+
+#distance
+masterstart <- as.data.frame(matrix(nrow = 205517, ncol = 0))
+masterstart$startlong <- as.numeric(masterdata$start.station.longitude)
+masterstart$startlat <- as.numeric(masterdata$start.station.latitude)
+
+masterend <- as.data.frame(matrix(nrow = 205517, ncol = 0))
+masterend$endlong <- masterdata$end.station.longitude
+masterend$endlat <- masterdata$end.station.latitude
+
+masterdata$distanceH <- distHaversine(masterstart, masterend, r=6378137)
+
+masterend <- NULL
+masterstart <- NULL
+
+masterdata$startMonth <- month(masterdata$newStartDate)
+masterdata$stopMonth <- month(masterdata$newStopDate)
+masterdata$startMonthFactor <- as.factor(month(masterdata$newStartDate))
+masterdata$stopMonthFactor <- as.factor(month(masterdata$newStopDate))
+
+masterdata$startDay <- day(masterdata$newStartDate)
+masterdata$stopDay <- day(masterdata$newStopDate)
+masterdata$startDayFactor <- as.factor(day(masterdata$newStartDate))
+masterdata$stopDayFactor <- as.factor(day(masterdata$newStopDate))
+
+
+str(masterdata)
+summary(masterdata)
+
+
+
+
+
+
+```
+
+
+# What Stations Gain or Lose Bikes throughout the day ? 
+
+```{r}
+# Find the count of start.station.name for each day \
+
+
+# Unique Departures and Arrivals for Each Citi Bike Station
+StationStarts <- as.data.frame(table(masterdata$start.station.name))
+StationEnds <- as.data.frame(table(masterdata$end.station.name))
+
+StationData <- data.frame(masterdata$start.station.name)
+StationData <- unique(StationData)
+StationData$numStarts <- StationStarts$Freq[match(StationData$masterdata.start.station.name, StationStarts$Var1)]
+StationData$numEnds <- StationEnds$Freq[match(StationData$masterdata.start.station.name, StationEnds$Var1)]
+
+
+# Compute the difference (Arrivals > Departures)
+StationData$difference <- StationData$numEnds - StationData$numStarts
+StationData <- arrange(StationData, desc(difference))
+
+# Top 10 stations with more arrivals than departures 
+TopTenSurplus <- head(StationData, 10)
+SurplusDifference <- select(TopTenSurplus, masterdata.start.station.name, difference)
+# Top 10 stations with Departures > Arrivals 
+
+StationData$differenceEnd <- StationData$numStarts - StationData$numEnds
+StationData <- arrange(StationData, desc(differenceEnd))
+
+TopTenDeficit <- head(StationData, 10)
+DeficitDifference <- select(TopTenDeficit, masterdata.start.station.name, differenceEnd)
+
+# Use tapply, (difference, startday, mean)
+
+#use rbind or something compute in masterdata instad of station data 
+tapply(StationData$difference, $, function)
+
+```
+
+
+### Find on the daily basis: 
+
+```{r}
+
+# Find StationData$difference for each station on a daily basis 
+
+## Use masterdata.startday to index 
+
+
+#Find daily average for each station 
+
+## Plot top ten on a bar plot for each (Gains & Losses)
+
+
+
+
+```
+
+## What impact does day of the week have on this 
+
+```{r}
+
+#Calculate percentage of total stations of those that experience gains or losses each day on average , find dominant 
+
+# COmpare what wins for each day of the week & weekdays v weekends 
+
+
+```
+
+
+#Map 
+```{r}
+
+register_google(key = "[AIzaSyDr6TG5wIRo6iXXvRbE0rV3n2EPx1jApRc]", write = TRUE )
+
+## get station info
+station.info <-masterdata %>%
+  group_by(start.station.id) %>%
+  summarise(lat=as.numeric(start.station.latitude[1]),
+            long=as.numeric(start.station.longitude[1]),
+            name=start.station.name[1],
+            n.trips=n())
+
+
+## get map and plot station locations 
+newyork.map <- get_map(location = 'New York City, New York', maptype='roadmap', color='bw',source='google',zoom=13)
+
+ggmap(newyork.map) + 
+  geom_point(data=station.info, aes(x=long,y=lat), color='red',size=2)+
+  theme(axis.ticks = element_blank(), axis.text = element_blank())+
+  xlab('')+ylab('')
+```
+
+
+
