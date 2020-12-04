@@ -95,6 +95,7 @@ barplot(totalRides)
 totalRides <- tapply(master$tripduration, master$roundedSNOW, mean, na.rm = TRUE)
 barplot(totalRides)
 ```
+Increase incentives for non-subscribers to ride when their is snow (is pricing a concern?)
 
 - Total Rides
 ```{r}
