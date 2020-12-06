@@ -83,6 +83,11 @@ ggplot(data=master[master$distanceH < 10000,], aes(x=SNOW, y=distanceH, colour=u
 ggplot(data=master[master$distanceH < 10000,], aes(x=roundedSNOW, y=distanceH, colour=usertype)) + geom_point(alpha = 0.5) + geom_jitter()
 ```
 
+We can see the trend that customers generally ride a consistent distance regardless of snow, while subscribers tend to travel shorter distances when there is snow. This is likely due to the fact that subscribers or frequent users are more likely to be locals to NYC and use other forms of transportation instead (i.e. subway).
+
+However, if we also factor in the amount of rides that are happening, we can see that subscribers make up a larger percentage of the total rides compared to customers whenever there is snow on the ground. Subscribers who are more likely to use a CitiBike than a regular customer in the snow (but will also ride a shorter distance).
+
+
 - Ride Duration
 ```{r}
 ggplot(data=master[master$tripduration < 10000,], aes(x=SNOW, y=tripduration, colour=usertype)) + geom_smooth()
@@ -95,7 +100,11 @@ barplot(totalRides)
 totalRides <- tapply(master$tripduration, master$roundedSNOW, mean, na.rm = TRUE)
 barplot(totalRides)
 ```
-Increase incentives for non-subscribers to ride when their is snow (is pricing a concern?)
+
+Trip duration drastically decreases when there is snow on the ground this is likely due to a combination of temperature and safety concerns. However, we see a much steeper drop off in ridership and trip duration among regular customers than subscribers.
+
+A potential solution to increase business would be to increase incentives for non-subscribers to ride when their is snow (is pricing a concern for them?) >> risk: liability?
+
 
 - Total Rides
 ```{r}
@@ -109,9 +118,14 @@ ggplot(data=master[master$roundedSNOW > 0, ], aes(x=roundedSNOW)) + geom_bar()
 
 ```
 
+As expected the more snow there is on the ground the less riders there are.
+
+
 - Demographics (Female vs. Male, Age)
 ```{r}
 ggplot(data=master[master$tripduration < 10000,], aes(x=SNOW, y=tripduration, colour=gender)) + geom_point(alpha = 0.25) + geom_jitter()
 ggplot(data=master[master$tripduration < 10000,], aes(x=roundedSNOW, y=tripduration, colour=gender)) + geom_point(alpha = 0.25) + geom_jitter()
 ```
+
+It seems that males are more likely to continue riding CitiBikes when there is snow on the ground than Females or Unknowns (which is expected as Unknowns fall largely in the non-subscriber category), but the difference is minimal.
 
