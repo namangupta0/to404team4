@@ -92,8 +92,7 @@ summary(masterdata)
 #newStartDate
 #length(masterdata[masterdata$start.station.name == "1 Ave & E 110 St" & masterdata$newStartDate == "2019-09-19",]$tripduration)
 
-masterdata[masterdata$start.station.name == "1 Ave & E 110 St" & masterdata$newStartDate == "2019-09-19",]
-masterdata[masterdata$end.station.name == "1 Ave & E 110 St" & masterdata$newStopDate == "2019-09-19",]
+nrow(masterdata[masterdata$start.station.name == "1 Ave & E 110 St" & masterdata$newStartDate == "2019-09-19",]) - nrow(masterdata[masterdata$end.station.name == "1 Ave & E 110 St" & masterdata$newStopDate == "2019-09-19",])
 
 
 masterdata[masterdata$newStartDate == "2019-09-19",]
