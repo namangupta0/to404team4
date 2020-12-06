@@ -68,10 +68,17 @@ masterdata$stopMonth <- month(masterdata$newStopDate)
 masterdata$startMonthFactor <- as.factor(month(masterdata$newStartDate))
 masterdata$stopMonthFactor <- as.factor(month(masterdata$newStopDate))
 
-masterdata$startDay <- day(masterdata$newStartDate)
-masterdata$stopDay <- day(masterdata$newStopDate)
-masterdata$startDayFactor <- as.factor(day(masterdata$newStartDate))
-masterdata$stopDayFactor <- as.factor(day(masterdata$newStopDate))
+#Create Time of Day Factor 
+
+masterdata$timeOfDay <- ifelse(hour(masterdata$newStartTime) >= 0 & hour(masterdata$newStartTime) < 12, "morning", ifelse(hour(masterdata$newStartTime) >= 12 & hour(masterdata$newStartTime) <=24, "afternoon","night"))
+
+masterdata$timeOfDay <- as.factor(masterdata$timeOfDay)
+
+# Create data frame for AM and one for PM
+
+masterAM <- filter(masterdata, masterdata$timeOfDay == "morning")
+masterPM <- filter(masterdata,masterdata$timeOfDay == "afternoon")
+
 
 
 str(masterdata)
@@ -127,6 +134,8 @@ DeficitDifference <- select(TopTenDeficit, masterdata.start.station.name, differ
 #use rbind or something compute in masterdata instad of station data 
 
 
+
+
 ```
 
 
@@ -176,7 +185,7 @@ station.info <- masterdata %>%
 
 ## get map and plot station locations 
 newyork.map <- get_map(location= 'New York City, New York', 
-                       maptype='roadmap', color='bw',source='google',zoom=13)
+                       maptype='roadmap', color='bw',source='google',zoom=12)
 
 ggmap(newyork.map) + 
   geom_point(data=station.info,aes(x=long,y=lat,color=n.trips),size=3,alpha=0.75)+
