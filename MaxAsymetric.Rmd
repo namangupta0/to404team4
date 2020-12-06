@@ -125,7 +125,7 @@ DeficitDifference <- select(TopTenDeficit, masterdata.start.station.name, differ
 # Use tapply, (difference, startday, mean)
 
 #use rbind or something compute in masterdata instad of station data 
-tapply(StationData$difference, $, function)
+
 
 ```
 
@@ -163,23 +163,25 @@ tapply(StationData$difference, $, function)
 #Map 
 ```{r}
 
-register_google(key = "[AIzaSyDr6TG5wIRo6iXXvRbE0rV3n2EPx1jApRc]", write = TRUE )
+register_google(key = "AIzaSyDr6TG5wIRo6iXXvRbE0rV3n2EPx1jApRc")
 
 ## get station info
-station.info <-masterdata %>%
+station.info <- masterdata %>%
   group_by(start.station.id) %>%
-  summarise(lat=as.numeric(start.station.latitude[1]),
-            long=as.numeric(start.station.longitude[1]),
-            name=start.station.name[1],
+  summarise(lat=as.numeric(start.station.latitude),
+            long=as.numeric(start.station.longitude),
+            name=start.station.name,
             n.trips=n())
 
 
 ## get map and plot station locations 
-newyork.map <- get_map(location = 'New York City, New York', maptype='roadmap', color='bw',source='google',zoom=13)
+newyork.map <- get_map(location= 'New York City, New York', 
+                       maptype='roadmap', color='bw',source='google',zoom=13)
 
 ggmap(newyork.map) + 
-  geom_point(data=station.info, aes(x=long,y=lat), color='red',size=2)+
-  theme(axis.ticks = element_blank(), axis.text = element_blank())+
+  geom_point(data=station.info,aes(x=long,y=lat,color=n.trips),size=3,alpha=0.75)+
+  scale_colour_gradient(high="red",low='green')+ 
+  theme(axis.ticks = element_blank(),axis.text = element_blank())+
   xlab('')+ylab('')
 ```
 
