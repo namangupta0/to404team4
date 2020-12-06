@@ -1,0 +1,157 @@
+---
+title: "TempAnalysis_Dawson"
+author: "Dawson Wang"
+date: "12/2/2020"
+output: 
+  html_document:
+      number_sections: true
+      toc_float: true
+---
+
+#Initialize
+
+##Packages
+```{r}
+library(lubridate)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(gganimate)
+library(gifski)
+library(png)
+library(data.table)
+library(geosphere)
+library(leaflet)
+```
+
+##Check File
+```{r}
+master <- read.csv("new_MASTER_01_data.csv")
+summary(master)
+str(master)
+```
+
+##Clean Data
+```{r}
+master$X <- NULL
+master$start.station.id <- as.factor(master$start.station.id)
+master$start.station.name <- as.factor(master$start.station.name)
+master$end.station.id <- as.factor(master$end.station.id)
+master$end.station.name <- as.factor(master$end.station.name)
+master$bikeid <- as.factor(master$bikeid)
+master$usertype <- as.factor(master$usertype)
+master$gender <- as.factor(master$gender)
+master <- rename(master, startTime = newStartTime, stopTime = newStopTime)
+master$startTime <- as.POSIXct(strptime(master$startTime, "%Y-%m-%d %H:%M:%S"))
+master$stopTime <- as.POSIXct(strptime(master$stopTime, "%Y-%m-%d %H:%M:%S"))
+master$startDate <- as.Date(master$startTime)
+master$stopDate <- as.Date(master$stopTime)
+for(i in 1:nrow(master)){
+  master$distMeters[i] <- distHaversine(c(master$start.station.latitude[i], master$start.station.longitude[i]), c(master$end.station.latitude[i], master$end.station.longitude[i]))
+}
+master$ageGroup <- as.factor(ifelse(master$birth.year >= 2000, "GenZ", ifelse(master$birth.year >= 1981, "Millennial", ifelse(master$birth.year >= 1965, "GenX", ifelse(master$birth.year >= 1946, "Boomer", ifelse(master$birth.year >= 1928, "Silent", "VeryOld"))))))
+master$ageGroup <- factor(master$ageGroup, levels = c("GenZ", "Millennial", "GenX", "Boomer", "Silent", "VeryOld"))
+master$startMonth <- month(master$startDate)
+master$stopMonth <- month(master$stopDate)
+master$seasonStart <- as.factor(ifelse(master$startMonth >= 3 & master$startMonth <= 5, "Spring", ifelse(master$startMonth >= 6 & master$startMonth <= 8, "Summer", ifelse(master$startMonth >= 9 & master$startMonth <= 11, "Fall", "Winter"))))
+master$startMonth <- factor(master$startMonth, levels = c("Spring", "Summer", "Fall", "Winter"))
+master$numWeekday <- as.factor(wday(master$startDate))
+#Defining rush hour as 6-10AM and 4-8PM
+master$rushHour <- as.factor(ifelse(master$numWeekday == 1 | master$numWeekday == 7, "No", ifelse(hour(master$startTime) < 6 | hour(master$startTime) > 10 & hour(master$startTime) < 16 | hour(master$startTime) > 20, "No", "Yes")))
+master <- rename(master, maxTemp = TMAX, minTemp = TMIN)
+master$weekNum <- as.numeric(strftime(master$startDate, format = "%V"))
+```
+
+##Updated Data Frame
+```{r}
+str(master)
+summary(master)
+```
+
+#Data Exploration
+
+##Average Daily Rides
+```{r}
+#Average Number of Rides by Day of Week
+master %>%
+  group_by(startDate, numWeekday) %>%
+  summarise(
+    numRides = mean(n())
+  ) %>%
+  ggplot(aes(x = numWeekday, y = numRides)) + geom_boxplot() + labs(x = "Weekday (1 = Sunday, 7 = Saturday)", y = "Average Number of CitiBike Rides")
+#By Maximum Temperature
+master %>%
+  group_by(maxTemp) %>%
+  summarise(
+    numRides = mean(n())
+  ) %>%
+  ggplot(aes(x = maxTemp, y = numRides)) + geom_point() + labs(x = "Maximum Temperature (F)", y = "Average Number of CitiBike Rides")
+#By Minimum Temperature
+master %>%
+  group_by(minTemp) %>%
+  summarise(
+    numRides = mean(n())
+  ) %>%
+  ggplot(aes(x = minTemp, y = numRides)) + geom_point() + labs(x = "Minimum Temperature (F)", y = "Average Number of CitiBike Rides")
+#Average Number of Rides by Day of Week by Temperature (Not super meaningful - keeping this here as a template)
+master %>%
+  group_by(weekNum, numWeekday) %>%
+  summarise(
+    numRides = mean(n()),
+    temp = maxTemp
+  ) %>%
+  ggplot(aes(x = temp, y = numRides)) + geom_boxplot() + transition_time(weekNum) + labs(title = "Week Number: {frame_time}")
+```
+
+##Ride Duration by Temp
+```{r}
+#By Maximum Temperature By Gender
+ggplot(data = master[master$tripduration < 10000,], aes(x = maxTemp, y = tripduration, colour = gender)) + geom_point()
+ggplot(data = master[master$tripduration < 10000,], aes(x = maxTemp, y = tripduration, colour = gender)) + geom_smooth()
+ggplot(data = master[master$tripduration < 10000,], aes(x = maxTemp, y = tripduration, colour = gender)) + geom_violin()
+ggplot(data = master[master$tripduration < 10000,], aes(x = maxTemp, y = tripduration, colour = gender)) + geom_boxplot()
+#By Maximum Temperature By User Type
+ggplot(data = master[master$tripduration < 10000,], aes(x = maxTemp, y = tripduration, colour = usertype)) + geom_point()
+ggplot(data = master[master$tripduration < 10000,], aes(x = maxTemp, y = tripduration, colour = usertype)) + geom_smooth()
+ggplot(data = master[master$tripduration < 10000,], aes(x = maxTemp, y = tripduration, colour = usertype)) + geom_violin()
+ggplot(data = master[master$tripduration < 10000,], aes(x = maxTemp, y = tripduration, colour = usertype)) + geom_boxplot()
+#By Minimum Temperature By Gender
+ggplot(data = master[master$tripduration < 10000,], aes(x = minTemp, y = tripduration, colour = gender)) + geom_point()
+ggplot(data = master[master$tripduration < 10000,], aes(x = minTemp, y = tripduration, colour = gender)) + geom_smooth()
+ggplot(data = master[master$tripduration < 10000,], aes(x = minTemp, y = tripduration, colour = gender)) + geom_violin()
+ggplot(data = master[master$tripduration < 10000,], aes(x = minTemp, y = tripduration, colour = gender)) + geom_boxplot()
+#By Minimum Temperature By User Type
+ggplot(data = master[master$tripduration < 10000,], aes(x = minTemp, y = tripduration, colour = usertype)) + geom_point()
+ggplot(data = master[master$tripduration < 10000,], aes(x = minTemp, y = tripduration, colour = usertype)) + geom_smooth()
+ggplot(data = master[master$tripduration < 10000,], aes(x = minTemp, y = tripduration, colour = usertype)) + geom_violin()
+ggplot(data = master[master$tripduration < 10000,], aes(x = minTemp, y = tripduration, colour = usertype)) + geom_boxplot()
+```
+
+##Ride Distance
+```{r}
+#Ride Distance by Maximum Temperature by Gender 
+ggplot(data = master, aes(x = maxTemp, y = distMeters, colour = gender)) + geom_point()
+ggplot(data = master, aes(x = maxTemp, y = distMeters, colour = gender)) + geom_smooth()
+ggplot(data = master, aes(x = maxTemp, y = distMeters, colour = gender)) + geom_violin()
+ggplot(data = master, aes(x = maxTemp, y = distMeters, colour = gender)) + geom_boxplot()
+#Ride Distance by Maximum Temperature by User Type
+ggplot(data = master, aes(x = maxTemp, y = distMeters, colour = usertype)) + geom_point()
+ggplot(data = master, aes(x = maxTemp, y = distMeters, colour = usertype)) + geom_smooth()
+ggplot(data = master, aes(x = maxTemp, y = distMeters, colour = usertype)) + geom_violin()
+ggplot(data = master, aes(x = maxTemp, y = distMeters, colour = usertype)) + geom_boxplot()
+#Ride Distance by Minimum Temperature by Gender
+ggplot(data = master, aes(x = minTemp, y = distMeters, colour = gender)) + geom_point()
+ggplot(data = master, aes(x = minTemp, y = distMeters, colour = gender)) + geom_smooth()
+ggplot(data = master, aes(x = minTemp, y = distMeters, colour = gender)) + geom_violin()
+ggplot(data = master, aes(x = minTemp, y = distMeters, colour = gender)) + geom_boxplot()
+#Ride Distance by Minimum Temperature by User Type
+ggplot(data = master, aes(x = minTemp, y = distMeters, colour = usertype)) + geom_point()
+ggplot(data = master, aes(x = minTemp, y = distMeters, colour = usertype)) + geom_smooth()
+ggplot(data = master, aes(x = minTemp, y = distMeters, colour = usertype)) + geom_violin()
+ggplot(data = master, aes(x = minTemp, y = distMeters, colour = usertype)) + geom_boxplot()
+```
+
+
+##Non-Temperature Analysis (Data exploration from HW#2)
+#Age Outliers/Anomalies
+#Count of rides by men/women; men could ride bikes more times than women, or there may be more men subscribers than women - we can't tell
