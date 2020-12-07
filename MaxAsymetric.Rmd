@@ -26,9 +26,7 @@ masterdata <- read.csv("new_MASTER_01_data.csv")
 #masterdata$newStartTime <- sample_01_data$starttime
 #masterdata$newStopTime <- sample_01_data$stoptime
 #write.csv(masterdata,"new_MASTER_01_data.csv")
-  
-summary(masterdata)
-str(masterdata)
+
 
 #is the date data gone?
 #summary(read.csv("sample_01_data.csv"))
@@ -79,14 +77,6 @@ masterdata$timeOfDay <- as.factor(masterdata$timeOfDay)
 
 masterAM <- filter(masterdata, masterdata$timeOfDay == "morning")
 masterPM <- filter(masterdata,masterdata$timeOfDay == "afternoon")
-
-
-
-str(masterdata)
-summary(masterdata)
-
-
-
 
 
 
