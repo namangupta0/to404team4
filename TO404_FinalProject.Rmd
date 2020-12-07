@@ -145,6 +145,8 @@ As expected the more snow there is on the ground the less riders (on average per
 
 - Demographics (Female vs. Male, Age)
 ```{r}
+ggplot(data=master[master$tripduration < 10000,], aes(x=SNOW, y=tripduration, colour=gender)) + geom_smooth() + labs(title = "Effects of Snow on Citi Bike Riders based on Gender", x = "Snow Depth (inches)", y = "Trip Duration (mins)")
+
 ggplot(data=master[master$tripduration < 10000,], aes(x=SNOW, y=tripduration, colour=gender)) + geom_point(alpha = 0.25) + geom_jitter() + labs(title = "Effects of Snow on Citi Bike Riders based on Gender", x = "Snow Depth (inches)", y = "Trip Duration (mins)")
 
 ggplot(data=master[master$tripduration < 10000,], aes(x=roundedSNOW, y=tripduration, colour=gender)) + geom_point(alpha = 0.25) + geom_jitter() + labs(title = "Effects of Snow on Citi Bike Riders based on Gender", x = "Snow Depth (rounded inches)", y = "Trip Duration (mins)")
