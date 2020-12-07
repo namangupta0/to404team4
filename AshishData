@@ -134,3 +134,4 @@ ggplot(data=masterdata, aes(x=week)) + geom_bar()
 
 #there are two days of the weekend and 5 days of the week, and approx. 150,000 rides over the weekday and 50,000 rides over the week. 
 #looks like people are riding more on weekdays. Let's closely map the day of the week so we can tell. 
+
