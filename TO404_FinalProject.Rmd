@@ -2,7 +2,14 @@
 title: "TO404_FinalProject"
 author: "Brian Zhao"
 date: "12/4/2020"
-output: html_document
+output: 
+  html_document:
+    number_sections: true
+    toc: true
+    toc_float: 
+      toc_collapsed: true
+    toc_depth: 3
+    theme: lumen
 ---
 
 ```{r setup, include=FALSE}
@@ -59,9 +66,13 @@ masterend$endlat <- master$end.station.latitude
 
 master$distanceH <- distHaversine(masterstart, masterend, r=6378137)
 
+# Speed
+master$speedMetersperMin <- master$distanceH / master$tripduration
+
 # Date
 master$newStartTime = as.POSIXct(strptime(master$newStartTime, "%Y-%m-%d %H:%M:%S"))
 master$newStopTime = as.POSIXct(strptime(master$newStopTime, "%Y-%m-%d %H:%M:%S"))
+master$startDate <- as.Date(master$newStartTime)
 
 # Snow
 master$roundedSNOW <- floor(master$SNOW)
@@ -75,11 +86,13 @@ summary(master)
 
 ## Snow
 *Effects of Snow on:*
+
 - Ride Distance (Customer vs. Subscriber)
 ```{r}
 ggplot(data=master[master$distanceH < 10000,], aes(x=SNOW, y=distanceH, colour=usertype)) + geom_smooth()
 
 ggplot(data=master[master$distanceH < 10000,], aes(x=SNOW, y=distanceH, colour=usertype)) + geom_point(alpha = 0.5) + geom_jitter()
+
 ggplot(data=master[master$distanceH < 10000,], aes(x=roundedSNOW, y=distanceH, colour=usertype)) + geom_point(alpha = 0.5) + geom_jitter()
 ```
 
@@ -93,10 +106,12 @@ However, if we also factor in the amount of rides that are happening, we can see
 ggplot(data=master[master$tripduration < 10000,], aes(x=SNOW, y=tripduration, colour=usertype)) + geom_smooth()
 
 ggplot(data=master[master$tripduration < 10000,], aes(x=SNOW, y=tripduration, colour=usertype)) + geom_point(alpha = 0.5) + geom_jitter()
+
 ggplot(data=master[master$tripduration < 10000,], aes(x=roundedSNOW, y=tripduration, colour=usertype)) + geom_point(alpha = 0.5) + geom_jitter()
 
 totalRides <- tapply(master$tripduration, master$SNOW, mean, na.rm = TRUE)
 barplot(totalRides)
+
 totalRides <- tapply(master$tripduration, master$roundedSNOW, mean, na.rm = TRUE)
 barplot(totalRides)
 ```
@@ -108,17 +123,24 @@ A potential solution to increase business would be to increase incentives for no
 
 - Total Rides
 ```{r}
-# Raw Data
+# Count - Raw Data
 ggplot(data=master, aes(x=SNOW)) + geom_bar()
 ggplot(data=master[master$SNOW > 0, ], aes(x=SNOW)) + geom_bar()
 
-# Rounded Values
+# Count - Rounded Values
 ggplot(data=master, aes(x=roundedSNOW)) + geom_bar()
 ggplot(data=master[master$roundedSNOW > 0, ], aes(x=roundedSNOW)) + geom_bar()
 
+# Average - Rounded Values
+master %>%
+  group_by(roundedSNOW) %>%
+  summarise(
+    numRides = mean(n())
+  ) %>%
+  ggplot(aes(x = roundedSNOW, y = numRides)) + geom_point() + ylim(0,1000) + labs(x = "Snow Depth", y = "Average Number of CitiBike Rides")
 ```
 
-As expected the more snow there is on the ground the less riders there are.
+As expected the more snow there is on the ground the less riders there are. The second plots doesn't include 0 values to remove days where there is no snow on the ground.
 
 
 - Demographics (Female vs. Male, Age)
@@ -128,4 +150,12 @@ ggplot(data=master[master$tripduration < 10000,], aes(x=roundedSNOW, y=tripdurat
 ```
 
 It seems that males are more likely to continue riding CitiBikes when there is snow on the ground than Females or Unknowns (which is expected as Unknowns fall largely in the non-subscriber category), but the difference is minimal.
+
+
+- Speed
+```{r}
+ggplot(data=master, aes(x=SNOW, y=speedMetersperMin, colour=usertype)) + geom_smooth()
+```
+
+Subscribers are trying to get from point A to point B and actually go faster with more snow (likely to get out of the cold and we can assume NYC streets are well plowed despite indicated snow depth)
 
