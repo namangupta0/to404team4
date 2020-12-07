@@ -1,0 +1,6 @@
+base
+data.table
+dplyr
+ggplot2
+geosphere
+lubridate
