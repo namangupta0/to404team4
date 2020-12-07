@@ -1,0 +1,136 @@
+---
+title: "AsymCodeForClass"
+Ashish Urval
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(data.table)
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(geosphere)
+library(ggmap)
+library(lubridate)
+```
+
+#reading in raw file from github
+```{r}
+library(readr)
+urlfile="https://raw.githubusercontent.com/namangupta0/to404team4/main/new_MASTER_01_data.csv"
+masterdata <- read.csv(url(urlfile))
+```
+
+
+```{r}
+#sample_01_data <- read.csv("sample_01_data.csv")
+#masterdata$newStartTime <- sample_01_data$starttime
+#masterdata$newStopTime <- sample_01_data$stoptime
+#write.csv(masterdata,"new_MASTER_01_data.csv")
+  
+summary(masterdata)
+str(masterdata)
+#is the date data gone?
+#summary(read.csv("sample_01_data.csv"))
+#convert columns to factors as needed
+masterdata$bikeid <- as.factor(masterdata$bikeid)
+masterdata$gender <- as.factor(masterdata$gender)
+masterdata$gender <- as.factor(ifelse(masterdata$gender == "0", "Unknown", ifelse(masterdata$gender == "1", "Male", "Female")))
+masterdata$X <- NULL
+masterdata$starttime <- NULL
+masterdata$stoptime <- NULL
+masterdata$newStartTime = as.POSIXct(strptime(masterdata$newStartTime, "%Y-%m-%d %H:%M:%S"))
+masterdata$newStopTime = as.POSIXct(strptime(masterdata$newStopTime, "%Y-%m-%d %H:%M:%S"))
+masterdata$newStartDate <- as.Date(masterdata$newStartTime)
+masterdata$newStopDate <- as.Date(masterdata$newStopTime)
+#distance
+masterstart <- as.data.frame(matrix(nrow = 205517, ncol = 0))
+masterstart$startlong <- as.numeric(masterdata$start.station.longitude)
+masterstart$startlat <- as.numeric(masterdata$start.station.latitude)
+masterend <- as.data.frame(matrix(nrow = 205517, ncol = 0))
+masterend$endlong <- masterdata$end.station.longitude
+masterend$endlat <- masterdata$end.station.latitude
+masterdata$distanceH <- distHaversine(masterstart, masterend, r=6378137)
+masterend <- NULL
+masterstart <- NULL
+masterdata$startMonth <- month(masterdata$newStartDate)
+masterdata$stopMonth <- month(masterdata$newStopDate)
+masterdata$startMonthFactor <- as.factor(month(masterdata$newStartDate))
+masterdata$stopMonthFactor <- as.factor(month(masterdata$newStopDate))
+#Create Time of Day Factor 
+masterdata$timeOfDay <- ifelse(hour(masterdata$newStartTime) >= 0 & hour(masterdata$newStartTime) < 12, "morning", ifelse(hour(masterdata$newStartTime) >= 12 & hour(masterdata$newStartTime) <=24, "afternoon","night"))
+masterdata$timeOfDay <- as.factor(masterdata$timeOfDay)
+# Create data frame for AM and one for PM
+masterAM <- filter(masterdata, masterdata$timeOfDay == "morning")
+masterPM <- filter(masterdata,masterdata$timeOfDay == "afternoon")
+str(masterdata)
+summary(masterdata)
+```
+
+#now that the data frames are created, I want to answer a few questions about asymmetric traffic 
+
+#i decided to start with the following: which stations have departures at different times of the day?
+#the reasoning behind this question was - I wanted to see which stations get affected by afternoon rush hour 
+```{r}
+#let's start by finding out a little bit about the AM vs PM data
+summary(masterAM)
+str(masterAM)
+summary(masterPM)
+str(masterPM)
+
+#let's find out how many people are using bikes by the hour 
+masterdata %>%
+  mutate(Timings = as.POSIXct(newStartTime)) %>%
+  group_by(lubridate::hour(Timings)) %>%
+  summarise(count=n()) %>%
+  arrange(desc(count))
+
+#now we know how many bikes are being used 
+#let's do some plotting 
+
+#when are people taking the longest trips?
+hour <- format(as.POSIXct(masterdata$newStartTime, format="%H:%M:%S"),"%H")
+hourie <- as.factor(hour)
+go <- tapply(masterdata$tripduration, hourie, mean)
+barplot(go,
+         main="Trip Duration by Month(Average)",
+         names.arg=c( "00", "01", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24"),
+         ylab="Average Duration", 
+         col=c("red", "white", "blue", "green", "black", "yellow", "purple", "grey", "pink", "orange"), 
+ )
+
+#when are people taking the most trips 
+hourtable <- table(hourie)
+barplot(hourtable)
+masterdata$hour <- hour
+
+#and finally, which stations have more departures (by hour)
+ggplot(data=masterdata[masterdata$start.station.name,], aes(x=masterdata$hour, y=start.station.name, colour=start.station.name)) + geom_smooth()
+
+```
+
+
+
+#Now, we know the most popular start stations by hour. Let's see if the day of the week has any role to play.
+```{r}
+library(ggplot2)
+masterdata$week <- ifelse(weekdays(masterdata$newStartTime) %in% c("Saturday", "Sunday"), "weekend", "weekday")
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=hour, y=tripduration, colour=week)) + geom_point(alpha = 0.5) + geom_jitter()
+
+#the graph looks great, but doesn't tell us too much. Let's try geom_smooth()
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=hour, y=tripduration, colour=week)) + geom_point(alpha = 0.5) + geom_smooth()
+
+#hm, this is also pretty difficult to read. 
+
+#we might as well see if there are more rides on weekends than weekdays as an aggregate. Let's check it out. 
+ggplot(data=masterdata, aes(x=week)) + geom_bar()
+
+#there are two days of the weekend and 5 days of the week, and approx. 150,000 rides over the weekday and 50,000 rides over the week. 
+#looks like people are riding more on weekdays. Let's closely map the day of the week so we can tell. 
