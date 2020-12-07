@@ -48,6 +48,9 @@ masterend$endlat <- masterdata$end.station.latitude
 
 masterdata$distanceH <- distHaversine(masterstart, masterend, r=6378137)
 
+#speed column
+masterdata$speedMetersperMin <- masterdata$distanceH / masterdata$tripduration
+
 masterend <- NULL
 masterstart <- NULL
 
@@ -88,6 +91,14 @@ ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=newStartDate, y=
 ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=newStartDate, y=tripduration, colour=usertype)) + geom_boxplot()
 ```
 As one might expect, trip duration increases during warmer months and decreases as temperature drops; this suggests that traveling longer distances is either more necessary or enjoyable in warmer months. Females on average have longer trips than men. Unknown gender has the highest trip duration, and customers have higher trip durations than subscribers. Perhaps customers do not have to reveal their gender information, and perhaps these customers differ in ways other than just status as it pertains to their trip duration. Citibike managers should keep in mind that any sort of system overhauls, construction, or repair should be placed in a month with less demand so the company does not miss out on revenue from peak times.
+
+```{r}
+nrow(masterdata[masterdata$PRCP < .5,])
+nrow(masterdata[masterdata$PRCP >= .5 & masterdata$PRCP < 1,])
+nrow(masterdata[masterdata$PRCP >= 1 & masterdata$PRCP < 1.5,])
+nrow(masterdata[masterdata$PRCP >= 1.5,])
+```
+These numbers will guide the analysis below, as it is important to note that, while the averages on the y-axis may provide suggest certain insights, looking at the confidence intervals at various ranges will be useful in drawing meaningful insights. As these metrics indicate, PRCP certainly has a negative correlation with number of rides that occur, which suggests that bikers in higher PRCP may not be reflective of the typical Citibike biker. 
 
 ```{r, cache = TRUE}
 #prcp vs tripduration by gender
@@ -173,3 +184,15 @@ ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP,y=distanceH
 ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP,y=distanceH,colour=usertype)) + geom_smooth() + facet_wrap(~ gender)
 ```
 In colder months and August, it seems that PRCP does not have significant correlation to average distance. In other months, the correlation fluctuates or steadily yields lower distance as PRCP increases. Interestingly, April which is a very rainy month traditionally seems to have the greatest fluctuation for distance's correlation with PRCP. Customers seem reliably unaffected by PRCP values in aggregate, except for a few interesting examples in August and May. Subscribers, again, vary greatly in their response, which may suggest that we must look into the behavioral trends of specific users to gain a full picture. While most insights from this data is fundamentally speculative, it is interesting to note the disparity in how females, males, and unknown genders vary in their response to PRCP, when separated into usertypes. Female customers seem unbothered, while female subscribers decrease distances up until a certain point and then increase again (potentially due to only necessary rides being made, which are not responsive to PRCP changes). Male customers strongly decrease distance as PRCP increases, while male subscribers reflect a similar pattern as female subscribers (potentially due to the aforementioned insight). Similar insights are yielded by separating user types into genders.
+
+# speed
+```{r, cache = TRUE}
+ggplot(data=masterdata, aes(x=PRCP,y=speedMetersperMin)) + geom_point()
+
+ggplot(data=masterdata, aes(x=PRCP,y=speedMetersperMin)) + geom_smooth()
+
+ggplot(data=masterdata, aes(x=PRCP,y=speedMetersperMin, colour = gender)) + geom_smooth()
+
+ggplot(data=masterdata, aes(x=PRCP,y=speedMetersperMin, colour = usertype)) + geom_smooth() + facet_wrap(~ agegroup)
+```
+PRCP has a general positive correlation with speed, which may indicate that bikers bike faster in rainier weather. It is important to note certain fluctuations in this correlation. Perhaps the dip in speed around PRCP=1 may indicate that this amount of rain is particularly difficult to bike in, which causes bikers to slow down.
