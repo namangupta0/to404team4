@@ -140,7 +140,7 @@ master %>%
   ggplot(aes(x = roundedSNOW, y = numRides)) + geom_point() + ylim(0,1000) + labs(x = "Snow Depth", y = "Average Number of CitiBike Rides")
 ```
 
-As expected the more snow there is on the ground the less riders there are. The second plots doesn't include 0 values to remove days where there is no snow on the ground.
+As expected the more snow there is on the ground the less riders (on average per day with that amount of snow) there are. The second plots doesn't include 0 values to remove days where there is no snow on the ground.
 
 
 - Demographics (Female vs. Male, Age)
