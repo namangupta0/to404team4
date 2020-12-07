@@ -69,6 +69,14 @@ str(masterdata)
 summary(masterdata)
 ```
 
+```{r}
+nrow(masterdata[masterdata$PRCP < .5,])
+nrow(masterdata[masterdata$PRCP >= .5 & masterdata$PRCP < 1,])
+nrow(masterdata[masterdata$PRCP >= 1 & masterdata$PRCP < 1.5,])
+nrow(masterdata[masterdata$PRCP >= 1.5,])
+```
+These numbers will guide the analysis below, as it is important to note that, while the averages on the y-axis may provide suggest certain insights, looking at the confidence intervals at various ranges will be useful in drawing meaningful insights. As these metrics indicate, PRCP certainly has a negative correlation with number of rides that occur, which suggests that bikers in higher PRCP may not be reflective of the typical Citibike biker. 
+
 ```{r, cache = TRUE}
 ggplot(data=masterdata, aes(x=newStartDate, y=tripduration, colour=gender)) + geom_point()
 
@@ -91,14 +99,6 @@ ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=newStartDate, y=
 ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=newStartDate, y=tripduration, colour=usertype)) + geom_boxplot()
 ```
 As one might expect, trip duration increases during warmer months and decreases as temperature drops; this suggests that traveling longer distances is either more necessary or enjoyable in warmer months. Females on average have longer trips than men. Unknown gender has the highest trip duration, and customers have higher trip durations than subscribers. Perhaps customers do not have to reveal their gender information, and perhaps these customers differ in ways other than just status as it pertains to their trip duration. Citibike managers should keep in mind that any sort of system overhauls, construction, or repair should be placed in a month with less demand so the company does not miss out on revenue from peak times.
-
-```{r}
-nrow(masterdata[masterdata$PRCP < .5,])
-nrow(masterdata[masterdata$PRCP >= .5 & masterdata$PRCP < 1,])
-nrow(masterdata[masterdata$PRCP >= 1 & masterdata$PRCP < 1.5,])
-nrow(masterdata[masterdata$PRCP >= 1.5,])
-```
-These numbers will guide the analysis below, as it is important to note that, while the averages on the y-axis may provide suggest certain insights, looking at the confidence intervals at various ranges will be useful in drawing meaningful insights. As these metrics indicate, PRCP certainly has a negative correlation with number of rides that occur, which suggests that bikers in higher PRCP may not be reflective of the typical Citibike biker. 
 
 ```{r, cache = TRUE}
 #prcp vs tripduration by gender
@@ -166,7 +166,6 @@ ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP,y=tripdurat
 ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP,y=tripduration,colour=gender)) + geom_smooth() + facet_wrap(~ usertype)
 
 ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP,y=tripduration,colour=usertype)) + geom_smooth() + facet_wrap(~ gender)
-
 ```
 It does not appear that months with higher average PRCP correspond to lower average trip durations. This may be due to the rainier months also being warmer and more pleasant than harsh winters of NY. Perhaps the pleasant days in rainy months are very positive for bikers in general, to the extent that they compensate for rainy days. We can see that, in different months, the amount of PRCP has varied correlations with trip duration. The winter months have little to know average tripduration changes as PRCP increases, which may reflect that bikers who ride during these times are not responsive to PRCP. Customers primarily decrease trip duration as PRCP increases, except in December and June, which may be months where tourists are determined to bike no matter the PRCP; subscribers vary greatly in their responses to PRCP in each month. Similar insights can be drawn when arranging the data by gender and usertype.
 
