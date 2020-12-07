@@ -148,12 +148,15 @@ TopTenDeficitPM <-tail(StationDataPM, 10)
 TopTenDeficitPM <- arrange(TopTenDeficitPM, difference)
 
 
-
+TopTenSurplusAM
+TopTenDeficitAM
+TopTenSurplusPM
+TopTenDeficitPM
 ```
 
-### The Top 10 Stations that have more arrivals than departures in the mornining (gain bikes) are `r TopTenSurplusAM`
+### The Top 10 Stations that have more arrivals than departures in the mornining (gain bikes) are 
 
-### The Top 10 Stations that have more departures than arrivals in the mornining (lose bikes) are `r TopTenDeficitAM`
+### The Top 10 Stations that have more departures than arrivals in the mornining (lose bikes) are 
 
 
 ### Visualize Top Tens 
