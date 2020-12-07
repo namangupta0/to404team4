@@ -72,6 +72,7 @@ masterdata$stopMonthFactor <- as.factor(month(masterdata$newStopDate))
 
 masterdata$timeOfDay <- ifelse(hour(masterdata$newStartTime) >= 0 & hour(masterdata$newStartTime) < 12, "morning", ifelse(hour(masterdata$newStartTime) >= 12 & hour(masterdata$newStartTime) <=24, "afternoon","night"))
 
+
 masterdata$timeOfDay <- as.factor(masterdata$timeOfDay)
 
 # Create data frame for AM and one for PM
@@ -95,100 +96,190 @@ summary(masterdata)
 # What Stations Gain or Lose Bikes throughout the day ? 
 
 ```{r}
-# Find the count of start.station.name for each day \
-#newStartDate
-#length(masterdata[masterdata$start.station.name == "1 Ave & E 110 St" & masterdata$newStartDate == "2019-09-19",]$tripduration)
-
-nrow(masterdata[masterdata$start.station.name == "1 Ave & E 110 St" & masterdata$newStartDate == "2019-09-19",]) - nrow(masterdata[masterdata$end.station.name == "1 Ave & E 110 St" & masterdata$newStopDate == "2019-09-19",])
-
-
-masterdata[masterdata$newStartDate == "2019-09-19",]
 
 # Unique Departures and Arrivals for Each Citi Bike Station
-StationStarts <- as.data.frame(table(masterdata$start.station.name))
-StationEnds <- as.data.frame(table(masterdata$end.station.name))
+StationStartsAM <- as.data.frame(table(masterAM$start.station.name))
+StationEndsAM <- as.data.frame(table(masterAM$end.station.name))
 
-StationData <- data.frame(masterdata$start.station.name)
-StationData <- unique(StationData)
-StationData$numStarts <- StationStarts$Freq[match(StationData$masterdata.start.station.name, StationStarts$Var1)]
-StationData$numEnds <- StationEnds$Freq[match(StationData$masterdata.start.station.name, StationEnds$Var1)]
+StationDataAM <- data.frame(masterAM$start.station.name)
+StationDataAM <- unique(StationDataAM)
+StationDataAM$numStarts <- StationStartsAM$Freq[match(StationDataAM$masterAM.start.station.name, StationStartsAM$Var1)]
+StationDataAM$numEnds <- StationEndsAM$Freq[match(StationDataAM$masterAM.start.station.name, StationEndsAM$Var1)]
 
 
 # Compute the difference (Arrivals > Departures)
-StationData$difference <- StationData$numEnds - StationData$numStarts
-StationData <- arrange(StationData, desc(difference))
+StationDataAM$difference <- StationDataAM$numEnds - StationDataAM$numStarts
+StationDataAM <- arrange(StationDataAM, desc(difference))
+StationDataAM <- na.omit(StationDataAM)
 
-# Top 10 stations with more arrivals than departures 
-TopTenSurplus <- head(StationData, 10)
-SurplusDifference <- select(TopTenSurplus, masterdata.start.station.name, difference)
-# Top 10 stations with Departures > Arrivals 
+# Top 10 stations that gain bikes throughout the morning
+TopTenSurplusAM <- head(StationDataAM, 10)
 
-StationData$differenceEnd <- StationData$numStarts - StationData$numEnds
-StationData <- arrange(StationData, desc(differenceEnd))
+# Top 10 stations that lose bikes throughout the morning 
 
-TopTenDeficit <- head(StationData, 10)
-DeficitDifference <- select(TopTenDeficit, masterdata.start.station.name, differenceEnd)
+TopTenDeficitAM <-tail(StationDataAM, 10)
+TopTenDeficitAM <- arrange(TopTenDeficitAM, difference)
 
-# Use tapply, (difference, startday, mean)
 
-#use rbind or something compute in masterdata instad of station data 
+#Replicate for PM times 
 
+
+# Unique Departures and Arrivals for Each Citi Bike Station
+StationStartsPM <- as.data.frame(table(masterPM$start.station.name))
+StationEndsPM <- as.data.frame(table(masterPM$end.station.name))
+
+StationDataPM <- data.frame(masterPM$start.station.name)
+StationDataPM <- unique(StationDataPM)
+StationDataPM$numStarts <- StationStartsPM$Freq[match(StationDataPM$masterPM.start.station.name, StationStartsPM$Var1)]
+StationDataPM$numEnds <- StationEndsPM$Freq[match(StationDataPM$masterPM.start.station.name, StationEndsPM$Var1)]
+
+
+# Compute the difference (Arrivals > Departures)
+StationDataPM$difference <- StationDataPM$numEnds - StationDataPM$numStarts
+StationDataPM <- arrange(StationDataPM, desc(difference))
+StationDataPM <- na.omit(StationDataPM)
+
+# Top 10 stations that gain bikes throughout the morning
+TopTenSurplusPM <- head(StationDataPM, 10)
+
+# Top 10 stations that lose bikes throughout the morning 
+
+TopTenDeficitPM <-tail(StationDataPM, 10)
+TopTenDeficitPM <- arrange(TopTenDeficitPM, difference)
 
 
 
 ```
 
+### The Top 10 Stations that have more arrivals than departures in the mornining (gain bikes) are `r TopTenSurplusAM`
 
-### Find on the daily basis: 
+### The Top 10 Stations that have more departures than arrivals in the mornining (lose bikes) are `r TopTenDeficitAM`
+
+
+### Visualize Top Tens 
 
 ```{r}
 
-# Find StationData$difference for each station on a daily basis 
+# Top Ten gains in the morning , add chart title 
 
-## Use masterdata.startday to index 
+TenSurplusMorning <- ggplot(TopTenSurplusAM, aes(reorder(masterAM.start.station.name, - difference), difference)) +
+    geom_col() +
+    scale_x_discrete(label = function(x) stringr::str_trunc(x, 20)) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+TenSurplusMorning
+```
+## Analysis: this chart shows a high level of asymmetry among the bike stations with station "Broadwat & E 22 St" having 384 more arrivals than departures in the morning throughout the year. 
+
+```{r}
+# Top Ten loses in the morning , add chart title 
+
+TenDeficitMorning <- ggplot(TopTenDeficitAM, aes(reorder(masterAM.start.station.name,  difference), difference)) +
+    geom_col() +
+    scale_x_discrete(label = function(x) stringr::str_trunc(x, 20)) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+TenDeficitMorning
 
 
-#Find daily average for each station 
+```
+## Analysis: Asymmetric traffic patterns are also evident in the chart above, with station "8 Ave & W 31 St" experiencing 449 more departures than arrivals in the morning throughout the year. 
 
-## Plot top ten on a bar plot for each (Gains & Losses)
 
+```{r}
+# Top Ten gains in the afternoon , add chart title 
+
+TenSurplusAfternoon<- ggplot(TopTenSurplusPM, aes(reorder(masterPM.start.station.name, - difference), difference)) +
+    geom_col() +
+    scale_x_discrete(label = function(x) stringr::str_trunc(x, 20)) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+TenSurplusAfternoon
+```
+### Analysis: The evidence of aymmetric traffic is also present in this chart, with station " 8 Ave & W 31 St " leading with 418 more arrivals than departures. Some symmetry between the two time periods is seen here with a loss of 449 bikes at this same station in the morning time period throughout the year. In fact, 8 of the top 10 stations that lose bikes in the morning period are present here gaining bikes. 
+
+
+```{r}
+# Top Ten loses in the afternoon , add chart title 
+
+TenDeficitAfternoon <- ggplot(TopTenDeficitPM, aes(reorder(masterPM.start.station.name,  difference), difference)) +
+    geom_col() +
+    scale_x_discrete(label = function(x) stringr::str_trunc(x, 20)) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+TenDeficitAfternoon
 
 
 
 ```
+
+## Analysis:
+
+### In the chart for the top ten stations that experience losses all ten of the stations that experience overflow of bikes in the morning time perion are present here. 
+
+### What user types are using these top asymmetric stations?
+
+```{r}
+
+CountCustomer <- nrow(masterAM[masterAM$usertype == "Customer" & masterAM$start.station.name == "Broadway & E 22 St",])
+CountSubscriber <- nrow(masterAM[masterAM$usertype == "Subscriber" & masterAM$start.station.name == "Broadway & E 22 St",])
+
+#able to find customer type for start, need to figure out for end 
+
+
+
+```
+
+## Analysis 
+
+### For stations that are asymmetric, users tend to be "subscribers" as opposed to "customers". At the station "Broadway & E 22 St" of the 239 users who started trips there `r CountSubscriber` are subscribers while only `r CountCustomer`
+
 
 ## What impact does day of the week have on this 
 
+
+
+#Map 
+
 ```{r}
+# Add longitude and latitude to the dataset
 
-#Calculate percentage of total stations of those that experience gains or losses each day on average , find dominant 
+startlatitude <- c(40.7403432,40.72019521,40.75510267, 40.76132983,40.75992262,40.72243797,40.7643971,40.74096374, 40.75724568, 40.70463334)
 
-# COmpare what wins for each day of the week & weekdays v weekends 
+TopTenSurplusAM$startlatitude <- startlatitude
 
+startlongitude <- c(-73.98955109,-74.01030064,-73.97498696
+,-73.97982001, -73.97648516, -74.00566443
+, -73.97371465, -73.98602213, -73.97805914
+, -74.01361706)
+
+TopTenSurplusAM$startlongitude <- startlongitude
 
 ```
 
 
-#Map 
+
+
+
+#Map Showing top ten surplus AM
+
 ```{r}
+
+#Map TopTenSurplus AM
+
 
 register_google(key = "AIzaSyDr6TG5wIRo6iXXvRbE0rV3n2EPx1jApRc")
 
 ## get station info
-station.info <- masterdata %>%
-  group_by(start.station.id) %>%
-  summarise(lat=as.numeric(start.station.latitude),
-            long=as.numeric(start.station.longitude),
-            name=start.station.name,
-            n.trips=n())
+station.info <- TopTenSurplusAM %>%
+  group_by(masterAM.start.station.name) %>%
+  summarise(lat=as.numeric(startlatitude),
+            long=as.numeric(startlongitude),
+            difference = difference)
 
 
 ## get map and plot station locations 
-newyork.map <- get_map(location= 'New York City, New York', 
+newyork.map <- get_map(location= 'Lower Manhattan, New York', 
                        maptype='roadmap', color='bw',source='google',zoom=12)
 
 ggmap(newyork.map) + 
-  geom_point(data=station.info,aes(x=long,y=lat,color=n.trips),size=3,alpha=0.75)+
+  geom_point(data=station.info,aes(x=long,y=lat,color= difference),size=5,alpha=0.75)+
   scale_colour_gradient(high="red",low='green')+ 
   theme(axis.ticks = element_blank(),axis.text = element_blank())+
   xlab('')+ylab('')
