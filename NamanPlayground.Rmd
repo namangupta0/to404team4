@@ -19,16 +19,9 @@ library(lubridate)
 
 ```{r}
 masterdata <- read.csv("new_MASTER_01_data.csv")
-#sample_01_data <- read.csv("sample_01_data.csv")
-#masterdata$newStartTime <- sample_01_data$starttime
-#masterdata$newStopTime <- sample_01_data$stoptime
-#write.csv(masterdata,"new_MASTER_01_data.csv")
   
 summary(masterdata)
 str(masterdata)
-#is the date data gone?
-#summary(read.csv("sample_01_data.csv"))
-#convert columns to factors as needed
 
 masterdata$bikeid <- as.factor(masterdata$bikeid)
 masterdata$gender <- as.factor(masterdata$gender)
@@ -73,15 +66,7 @@ str(masterdata)
 summary(masterdata)
 ```
 
-```{r}
-#average precip per month
-#facet wrap month, against count of number of rides as y variable. x = average precip, colour = gender
-#categorize birth year into age groups. Facet wrap or colour by age groups
-#rain vs trip length (end time - start time)
-#bar plot of busy/not-busy stations on rainy days
-#randomly try the same plot across a few select dates
-
-
+```{r, cache = TRUE}
 ggplot(data=masterdata, aes(x=newStartDate, y=tripduration, colour=gender)) + geom_point()
 
 #newStartDate vs tripduration by gender
@@ -102,8 +87,9 @@ ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=newStartDate, y=
 
 ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=newStartDate, y=tripduration, colour=usertype)) + geom_boxplot()
 ```
+As one might expect, trip duration increases during warmer months and decreases as temperature drops; this suggests that traveling longer distances is either more necessary or enjoyable in warmer months. Females on average have longer trips than men. Unknown gender has the highest trip duration, and customers have higher trip durations than subscribers. Perhaps customers do not have to reveal their gender information, and perhaps these customers differ in ways other than just status as it pertains to their trip duration. Citibike managers should keep in mind that any sort of system overhauls, construction, or repair should be placed in a month with less demand so the company does not miss out on revenue from peak times.
 
-```{r}
+```{r, cache = TRUE}
 #prcp vs tripduration by gender
 ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=tripduration, colour=gender)) + geom_point()
 
@@ -122,9 +108,10 @@ ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=tripdura
 
 ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=tripduration, colour=usertype)) + geom_boxplot()
 ```
+As precipitation increases, trip duration decreases. Females again have higher average trip duration, but they seem to have a varied correlation to preciptation. Perhaps the rise/plateau at the high PRCP levels for both males and females is influenced by people who use Citibike out of necessity. This means that the primary decrease in trip duration as PRCP increases is logical, as people who can make their trips shorter will. However, beyond a certain point, the people who cannot adjust their travel will then be bringing up the overall average trip duration. Unknown genders, who may be those who are not regular users of Citibike, are likely casual bikers who will decrease their trip lengths as much as posssible, and this is what the visualization depicts. It is curious that customers have inconsistent correlation to PRCP values. Perhaps we can infer that some rain deters users from taking long trips, while there is a certain amount of rain that is considered pleasant; this certain amount can also be an amount where casual riders do not ride, and so only bikers who bike out of need are biking in the middle range. After this middle range, perhaps even those bikers begin having to compromise on their trip lengths. Biking speed may also fluctuate and be responsible for trip duration changes.
 
-```{r}
-#prcp vs tripduration by gender
+```{r, cache = TRUE}
+#prcp vs distanceH by gender
 ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=distanceH, colour=gender)) + geom_point()
 
 ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=distanceH, colour=gender)) + geom_smooth()
@@ -142,8 +129,9 @@ ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=distance
 
 ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=distanceH, colour=usertype)) + geom_boxplot()
 ```
+Amongst unknown genders, PRCP is associated with a decrease in distance. For males and females, there seems to be a decrease in distance as PRCP increases to a certain level, after which the rate of decrease diminishes. For females, the distance begins to increase, whereas for males it mostly plateaus. This, as seen previously, may be reflective of who is biking in these various PRCP ranges. In the middle range, we can infer that people try to minimize distance if they can feasibly. Perhaps as PRCP becomes drastic, only those with a need to bike will be out, who may be not be able to adjust the distance of their trip. The disparity between male response and female response here is curious. Customers, who are likely recreational/infrequent users, predictably decrease distance in correlation to increased PRCP. Subscribers reflect a response similar to the females mentioned previously. 
 
-```{r}
+```{r, cache = TRUE}
 averagePRCPMonthly <- tapply(masterdata$PRCP,masterdata$startMonthFactor,mean,)
 plot(averagePRCPMonthly,xlab="Month",ylab="Average PRCP")
 
@@ -152,9 +140,9 @@ plot(averageTripDurationMonthly,xlab="Month",ylab="Average Trip Duration")
 
 numTripsMonthly <- table(masterdata$startMonth)
 
-ggplot(,aes(x=averagePRCPMonthly, y=averageTripDurationMonthly)) + geom_point()
+plot(x=averagePRCPMonthly, y=averageTripDurationMonthly)
 
-ggplot(,aes(x=averagePRCPMonthly, y=numTripsMonthly)) + geom_point()
+plot(x=averagePRCPMonthly, y=numTripsMonthly)
 
 ggplot(data=masterdata, aes(x=PRCP,y=tripduration)) + geom_point() + facet_wrap(~ startMonthFactor)
 
@@ -169,7 +157,9 @@ ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP,y=tripdurat
 ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP,y=tripduration,colour=usertype)) + geom_smooth() + facet_wrap(~ gender)
 
 ```
-```{r}
+It does not appear that months with higher average PRCP correspond to lower average trip durations. This may be due to the rainier months also being warmer and more pleasant than harsh winters of NY. Perhaps the pleasant days in rainy months are very positive for bikers in general, to the extent that they compensate for rainy days. We can see that, in different months, the amount of PRCP has varied correlations with trip duration. The winter months have little to know average tripduration changes as PRCP increases, which may reflect that bikers who ride during these times are not responsive to PRCP. Customers primarily decrease trip duration as PRCP increases, except in December and June, which may be months where tourists are determined to bike no matter the PRCP; subscribers vary greatly in their responses to PRCP in each month. Similar insights can be drawn when arranging the data by gender and usertype.
+
+```{r, cache = TRUE}
 ggplot(data=masterdata, aes(x=PRCP,y=distanceH)) + geom_point() + facet_wrap(~ startMonthFactor)
 
 ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP,y=distanceH)) + geom_smooth() + facet_wrap(~ startMonthFactor)
