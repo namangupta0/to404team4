@@ -157,7 +157,7 @@ It seems that males are more likely to continue riding CitiBikes when there is s
 
 - Speed
 ```{r}
-ggplot(data=master, aes(x=SNOW, y=speedMetersperMin, colour=usertype)) + geom_smooth() + labs(title = "Effects of Snow on Citi Bike Rider Speed", x = "Snow Depth (inches)", y = "Speed (meters per min)")
+ggplot(data=master, aes(x=SNOW, y=speedMetersperMin, colour=usertype)) + geom_smooth() + labs(title = "Effects of Snow on Citi Bike Rider Speed", x = "Snow Depth (inches)", y = "Speed (meters per sec)")
 ```
 
 Subscribers are trying to get from point A to point B and actually go faster with more snow (likely to get out of the cold and we can assume NYC streets are well plowed despite indicated snow depth)
