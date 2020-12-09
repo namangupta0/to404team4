@@ -78,6 +78,14 @@ masterdata$timeOfDay <- as.factor(masterdata$timeOfDay)
 masterAM <- filter(masterdata, masterdata$timeOfDay == "morning")
 masterPM <- filter(masterdata,masterdata$timeOfDay == "afternoon")
 
+#Day of Week 
+
+masterdata$numWeekday <- as.factor(wday(masterdata$newStartDate))
+
+# Create subsets for Weekday and Weekend
+weekdayData <- subset(masterdata, subset = (masterdata$numWeekday != "7" & masterdata$numWeekday != "1"))
+weekendData <- subset(masterdata, subset = (masterdata$numWeekday == "7" | masterdata$numWeekday == "1"))
+
 
 
 ```
@@ -103,7 +111,9 @@ StationDataAM <- arrange(StationDataAM, desc(difference))
 StationDataAM <- na.omit(StationDataAM)
 
 # Top 10 stations that gain bikes throughout the morning
+
 TopTenSurplusAM <- head(StationDataAM, 10)
+
 
 # Top 10 stations that lose bikes throughout the morning 
 
@@ -144,16 +154,12 @@ TopTenSurplusPM
 TopTenDeficitPM
 ```
 
-### The Top 10 Stations that have more arrivals than departures in the mornining (gain bikes) are 
-
-### The Top 10 Stations that have more departures than arrivals in the mornining (lose bikes) are 
-
 
 ### Visualize Top Tens 
 
 ```{r}
 
-# Top Ten gains in the morning , add chart title 
+# Top Ten gains in the morning 
 
 TenSurplusMorning <- ggplot(TopTenSurplusAM, aes(reorder(masterAM.start.station.name, - difference), difference)) +
     geom_col() +
@@ -161,11 +167,11 @@ TenSurplusMorning <- ggplot(TopTenSurplusAM, aes(reorder(masterAM.start.station.
     theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
 TenSurplusMorning
 ```
-## Analysis: this chart shows a high level of asymmetry among the bike stations with station "Broadwat & E 22 St" having 384 more arrivals than departures in the morning throughout the year. 
+## Analysis: 
+this chart shows a high level of asymmetry among the bike stations with station "Broadwat & E 22 St" having 384 more arrivals than departures in the morning throughout the year. 
 
 ```{r}
-# Top Ten loses in the morning , add chart title 
-
+# Top Ten loses in the morning 
 TenDeficitMorning <- ggplot(TopTenDeficitAM, aes(reorder(masterAM.start.station.name,  difference), difference)) +
     geom_col() +
     scale_x_discrete(label = function(x) stringr::str_trunc(x, 20)) +
@@ -174,11 +180,12 @@ TenDeficitMorning
 
 
 ```
-## Analysis: Asymmetric traffic patterns are also evident in the chart above, with station "8 Ave & W 31 St" experiencing 449 more departures than arrivals in the morning throughout the year. 
+## Analysis: 
+Asymmetric traffic patterns are also evident in the chart above, with station "8 Ave & W 31 St" experiencing 449 more departures than arrivals in the morning throughout the year. 
 
 
 ```{r}
-# Top Ten gains in the afternoon , add chart title 
+# Top Ten gains in the afternoon 
 
 TenSurplusAfternoon<- ggplot(TopTenSurplusPM, aes(reorder(masterPM.start.station.name, - difference), difference)) +
     geom_col() +
@@ -186,11 +193,12 @@ TenSurplusAfternoon<- ggplot(TopTenSurplusPM, aes(reorder(masterPM.start.station
     theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
 TenSurplusAfternoon
 ```
-### Analysis: The evidence of aymmetric traffic is also present in this chart, with station " 8 Ave & W 31 St " leading with 418 more arrivals than departures. Some symmetry between the two time periods is seen here with a loss of 449 bikes at this same station in the morning time period throughout the year. In fact, 8 of the top 10 stations that lose bikes in the morning period are present here gaining bikes. 
+### Analysis:
+The evidence of asymmetric traffic is also present in this chart, with station " 8 Ave & W 31 St " leading with 418 more arrivals than departures. Some symmetry between the two time periods is seen here with a loss of 449 bikes at this same station in the morning time period throughout the year. In fact, 8 of the top 10 stations that lose bikes in the morning period are present here gaining bikes. 
 
 
 ```{r}
-# Top Ten loses in the afternoon , add chart title 
+# Top Ten loses in the afternoon 
 
 TenDeficitAfternoon <- ggplot(TopTenDeficitPM, aes(reorder(masterPM.start.station.name,  difference), difference)) +
     geom_col() +
@@ -202,9 +210,79 @@ TenDeficitAfternoon
 
 ```
 
-## Analysis:
+### Analysis:
 
-### In the chart for the top ten stations that experience losses all ten of the stations that experience overflow of bikes in the morning time perion are present here. 
+In the chart for the top ten stations that experience losses all ten of the stations that experience overflow of bikes in the morning time perion are present here. 
+
+
+## Does Weekend vs. Weekday have an effect on asymmetric traffic? Test Hypothesis that asymmetry is due to work commutes 
+
+```{r}
+
+#create counts of data 
+uniqueStarts <- as.data.frame(table(masterdata$start.station.name))
+uniqueEnds <- as.data.frame(table(masterdata$end.station.name))
+completeFrame <- data.frame(masterdata$start.station.name)
+completeFrame <- unique(completeFrame)
+completeFrame <- na.omit(completeFrame)
+completeFrame$numStarts <- uniqueStarts$Freq[match(completeFrame$masterdata.start.station.name, uniqueStarts$Var1)]
+completeFrame$numEnds <- uniqueEnds$Freq[match(completeFrame$masterdata.start.station.name, uniqueEnds$Var1)]
+
+
+#Calculate Difference
+uniqueStartsWeek <- as.data.frame(table(weekdayData$start.station.name))
+uniqueEndsWeek <- as.data.frame(table(weekdayData$end.station.name))
+uniqueStartsWeekend <- as.data.frame(table(weekendData$start.station.name))
+uniqueEndsWeekend <- as.data.frame(table(weekendData$end.station.name))
+
+completeFrame$numStartsWeek <- uniqueStartsWeek$Freq[match(completeFrame$masterdata.start.station.name, uniqueStartsWeek$Var1)]
+completeFrame$numEndsWeek <- uniqueEndsWeek$Freq[match(completeFrame$masterdata.start.station.name, uniqueEndsWeek$Var1)]
+completeFrame$differenceWeek <- completeFrame$numEndsWeek - completeFrame$numStartsWeek
+completeFrame <- na.omit(completeFrame)
+
+
+# Top 10 stations with surplus during the week (Mon-Fri)
+weekList <- arrange(completeFrame, desc(differenceWeek))
+head(weekList$masterdata.start.station.name, 10)
+
+
+
+# Top 10 stations with deficit during the week
+tail(weekList$masterdata.start.station.name, 10)
+completeFrame$numStartsWeekend <- uniqueStartsWeekend$Freq[match(completeFrame$masterdata.start.station.name, uniqueStartsWeekend$Var1)]
+completeFrame$numEndsWeekend <- uniqueEndsWeekend$Freq[match(completeFrame$masterdata.start.station.name, uniqueEndsWeekend$Var1)]
+completeFrame$differenceWeekend <- completeFrame$numEndsWeekend - completeFrame$numStartsWeekend
+
+
+
+# Top 10 stations with surplus during the weekend 
+weekendList <- na.omit(weekendList)
+weekendList <- arrange(completeFrame, desc(differenceWeekend))
+Top10GainWeekend<- head(weekendList, 10) 
+
+# Top 10 stations with deficit during the weekend
+Top10DeficitWeekend <- tail(weekendList, 10)
+
+```
+
+
+## Visuals 
+
+### Top Deficit during Week 
+
+```{r}
+TenDeficitWeek <- ggplot(TopTenDeficitPM, aes(reorder(masterPM.start.station.name,  difference), difference)) +
+    geom_col() +
+    scale_x_discrete(label = function(x) stringr::str_trunc(x, 20)) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+TenDeficitAfternoon
+```
+
+
+
+
+
+
 
 ### What user types are using these top asymmetric stations?
 
@@ -213,9 +291,11 @@ TenDeficitAfternoon
 CountCustomer <- nrow(masterAM[masterAM$usertype == "Customer" & masterAM$start.station.name == "Broadway & E 22 St",])
 CountSubscriber <- nrow(masterAM[masterAM$usertype == "Subscriber" & masterAM$start.station.name == "Broadway & E 22 St",])
 
+
+
 #able to find customer type for start, need to figure out for end 
 
-
+pie(UsersBroadway, labels = c("Customers", "Subscribers"), main = "User Type Breakdown: Broadway & E 22 St")
 
 ```
 
