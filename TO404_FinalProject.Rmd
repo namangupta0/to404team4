@@ -38,48 +38,48 @@ write.csv(sampleData_01, 'sample_01_data.csv')
 ```
 
 ```{r}
-master <- read.csv("new_MASTER_01_data.csv")
+masterdata <- read.csv("new_MASTER_01_data.csv")
 ```
 
 ## Clean Data
 ```{r}
 # Explore Data
-str(master)
-summary(master)
+str(masterdata)
+summary(masterdata)
 
 # Remove Identifier Column
-master$X <- NULL
+masterdata$X <- NULL
 
 # Assign Factors
-master$bikeid <- as.factor(master$bikeid)
-master$gender <- as.factor(master$gender)
-master$gender <- as.factor(ifelse(master$gender == "0", "Unknown", ifelse(master$gender == "1", "Male", "Female")))
+masterdata$bikeid <- as.factor(masterdata$bikeid)
+masterdata$gender <- as.factor(masterdata$gender)
+masterdata$gender <- as.factor(ifelse(masterdata$gender == "0", "Unknown", ifelse(masterdata$gender == "1", "Male", "Female")))
 
 # Distance
 masterstart <- as.data.frame(matrix(nrow = 205517, ncol = 0))
-masterstart$startlong <- as.numeric(master$start.station.longitude)
-masterstart$startlat <- as.numeric(master$start.station.latitude)
+masterstart$startlong <- as.numeric(masterdata$start.station.longitude)
+masterstart$startlat <- as.numeric(masterdata$start.station.latitude)
 
 masterend <- as.data.frame(matrix(nrow = 205517, ncol = 0))
-masterend$endlong <- master$end.station.longitude
-masterend$endlat <- master$end.station.latitude
+masterend$endlong <- masterdata$end.station.longitude
+masterend$endlat <- masterdata$end.station.latitude
 
-master$distanceH <- distHaversine(masterstart, masterend, r=6378137)
+masterdata$distanceH <- distHaversine(masterstart, masterend, r=6378137)
 
 # Speed
-master$speedMetersperMin <- master$distanceH / master$tripduration
+masterdata$speedMetersperMin <- masterdata$distanceH / masterdata$tripduration
 
 # Date
-master$newStartTime = as.POSIXct(strptime(master$newStartTime, "%Y-%m-%d %H:%M:%S"))
-master$newStopTime = as.POSIXct(strptime(master$newStopTime, "%Y-%m-%d %H:%M:%S"))
-master$startDate <- as.Date(master$newStartTime)
+masterdata$newStartTime = as.POSIXct(strptime(masterdata$newStartTime, "%Y-%m-%d %H:%M:%S"))
+masterdata$newStopTime = as.POSIXct(strptime(masterdata$newStopTime, "%Y-%m-%d %H:%M:%S"))
+masterdata$startDate <- as.Date(masterdata$newStartTime)
 
 # Snow
-master$roundedSNOW <- floor(master$SNOW)
+masterdata$roundedSNOW <- floor(masterdata$SNOW)
 
 # Check Data
-str(master)
-summary(master)
+str(masterdata)
+summary(masterdata)
 ```
 
 # Weather
@@ -89,11 +89,11 @@ summary(master)
 
 - Ride Distance (Customer vs. Subscriber)
 ```{r}
-ggplot(data=master[master$distanceH < 10000,], aes(x=SNOW, y=distanceH, colour=usertype)) + geom_smooth() + labs(title = "Effects of Snow on Citi Bike Ride Distance", x = "Snow Depth (inches)", y = "Distance (meters)")
+ggplot(data=masterdata[masterdata$distanceH < 10000,], aes(x=SNOW, y=distanceH, colour=usertype)) + geom_smooth() + labs(title = "Effects of Snow on Citi Bike Ride Distance", x = "Snow Depth (inches)", y = "Distance (meters)")
 
-ggplot(data=master[master$distanceH < 10000,], aes(x=SNOW, y=distanceH, colour=usertype)) + geom_point(alpha = 0.5) + geom_jitter() + labs(title = "Effects of Snow on Citi Bike Ride Distance", x = "Snow Depth (inches)", y = "Distance (meters)")
+ggplot(data=masterdata[masterdata$distanceH < 10000,], aes(x=SNOW, y=distanceH, colour=usertype)) + geom_point(alpha = 0.5) + geom_jitter() + labs(title = "Effects of Snow on Citi Bike Ride Distance", x = "Snow Depth (inches)", y = "Distance (meters)")
 
-ggplot(data=master[master$distanceH < 10000,], aes(x=roundedSNOW, y=distanceH, colour=usertype)) + geom_point(alpha = 0.5) + geom_jitter() + labs(title = "Effects of Snow on Citi Bike Ride Distance", x = "Snow Depth (rounded inches)", y = "Distance (meters)")
+ggplot(data=masterdata[masterdata$distanceH < 10000,], aes(x=roundedSNOW, y=distanceH, colour=usertype)) + geom_point(alpha = 0.5) + geom_jitter() + labs(title = "Effects of Snow on Citi Bike Ride Distance", x = "Snow Depth (rounded inches)", y = "Distance (meters)")
 ```
 
 We can see the trend that customers generally ride a consistent distance regardless of snow, while subscribers tend to travel shorter distances when there is snow. This is likely due to the fact that subscribers or frequent users are more likely to be locals to NYC and use other forms of transportation instead (i.e. subway).
@@ -103,16 +103,16 @@ However, if we also factor in the amount of rides that are happening, we can see
 
 - Ride Duration
 ```{r}
-ggplot(data=master[master$tripduration < 10000,], aes(x=SNOW, y=tripduration, colour=usertype)) + geom_smooth() + labs(title = "Effects of Snow on Citi Bike Ride Duration", x = "Snow Depth (inches)", y = "Trip Duration (secs)")
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=SNOW, y=tripduration, colour=usertype)) + geom_smooth() + labs(title = "Effects of Snow on Citi Bike Ride Duration", x = "Snow Depth (inches)", y = "Trip Duration (secs)")
 
-ggplot(data=master[master$tripduration < 10000,], aes(x=SNOW, y=tripduration, colour=usertype)) + geom_point(alpha = 0.5) + geom_jitter() + labs(title = "Effects of Snow on Citi Bike Ride Duration", x = "Snow Depth (inches)", y = "Trip Duration (secs)")
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=SNOW, y=tripduration, colour=usertype)) + geom_point(alpha = 0.5) + geom_jitter() + labs(title = "Effects of Snow on Citi Bike Ride Duration", x = "Snow Depth (inches)", y = "Trip Duration (secs)")
 
-ggplot(data=master[master$tripduration < 10000,], aes(x=roundedSNOW, y=tripduration, colour=usertype)) + geom_point(alpha = 0.5) + geom_jitter() + labs(title = "Effects of Snow on Citi Bike Ride Duration", x = "Snow Depth (rounded inches)", y = "Trip Duration (secs)")
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=roundedSNOW, y=tripduration, colour=usertype)) + geom_point(alpha = 0.5) + geom_jitter() + labs(title = "Effects of Snow on Citi Bike Ride Duration", x = "Snow Depth (rounded inches)", y = "Trip Duration (secs)")
 
-totalRides <- tapply(master$tripduration, master$SNOW, mean, na.rm = TRUE)
+totalRides <- tapply(masterdata$tripduration, masterdata$SNOW, mean, na.rm = TRUE)
 barplot(totalRides)
 
-totalRides <- tapply(master$tripduration, master$roundedSNOW, mean, na.rm = TRUE)
+totalRides <- tapply(masterdata$tripduration, masterdata$roundedSNOW, mean, na.rm = TRUE)
 barplot(totalRides)
 ```
 
@@ -124,15 +124,15 @@ A potential solution to increase business would be to increase incentives for no
 - Total Rides
 ```{r}
 # Count - Raw Data
-ggplot(data=master, aes(x=SNOW)) + geom_bar()
-ggplot(data=master[master$SNOW > 0, ], aes(x=SNOW)) + geom_bar()
+ggplot(data=masterdata, aes(x=SNOW)) + geom_bar()
+ggplot(data=masterdata[masterdata$SNOW > 0, ], aes(x=SNOW)) + geom_bar()
 
 # Count - Rounded Values
-ggplot(data=master, aes(x=roundedSNOW)) + geom_bar()
-ggplot(data=master[master$roundedSNOW > 0, ], aes(x=roundedSNOW)) + geom_bar()
+ggplot(data=masterdata, aes(x=roundedSNOW)) + geom_bar()
+ggplot(data=masterdata[masterdata$roundedSNOW > 0, ], aes(x=roundedSNOW)) + geom_bar()
 
 # Average - Rounded Values
-master %>%
+masterdata %>%
   group_by(roundedSNOW) %>%
   summarise(
     numRides = mean(n())
@@ -145,11 +145,11 @@ As expected the more snow there is on the ground the less riders (on average per
 
 - Demographics (Female vs. Male, Age)
 ```{r}
-ggplot(data=master[master$tripduration < 10000,], aes(x=SNOW, y=tripduration, colour=gender)) + geom_smooth() + labs(title = "Effects of Snow on Citi Bike Riders based on Gender", x = "Snow Depth (inches)", y = "Trip Duration (secs)")
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=SNOW, y=tripduration, colour=gender)) + geom_smooth() + labs(title = "Effects of Snow on Citi Bike Riders based on Gender", x = "Snow Depth (inches)", y = "Trip Duration (secs)")
 
-ggplot(data=master[master$tripduration < 10000,], aes(x=SNOW, y=tripduration, colour=gender)) + geom_point(alpha = 0.25) + geom_jitter() + labs(title = "Effects of Snow on Citi Bike Riders based on Gender", x = "Snow Depth (inches)", y = "Trip Duration (secs)")
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=SNOW, y=tripduration, colour=gender)) + geom_point(alpha = 0.25) + geom_jitter() + labs(title = "Effects of Snow on Citi Bike Riders based on Gender", x = "Snow Depth (inches)", y = "Trip Duration (secs)")
 
-ggplot(data=master[master$tripduration < 10000,], aes(x=roundedSNOW, y=tripduration, colour=gender)) + geom_point(alpha = 0.25) + geom_jitter() + labs(title = "Effects of Snow on Citi Bike Riders based on Gender", x = "Snow Depth (rounded inches)", y = "Trip Duration (secs)")
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=roundedSNOW, y=tripduration, colour=gender)) + geom_point(alpha = 0.25) + geom_jitter() + labs(title = "Effects of Snow on Citi Bike Riders based on Gender", x = "Snow Depth (rounded inches)", y = "Trip Duration (secs)")
 ```
 
 It seems that males are more likely to continue riding CitiBikes when there is snow on the ground than Females or Unknowns (which is expected as Unknowns fall largely in the non-subscriber category), but the difference is minimal.
@@ -157,7 +157,7 @@ It seems that males are more likely to continue riding CitiBikes when there is s
 
 - Speed
 ```{r}
-ggplot(data=master, aes(x=SNOW, y=speedMetersperMin, colour=usertype)) + geom_smooth() + labs(title = "Effects of Snow on Citi Bike Rider Speed", x = "Snow Depth (inches)", y = "Speed (meters per sec)")
+ggplot(data=masterdata, aes(x=SNOW, y=speedMetersperMin, colour=usertype)) + geom_smooth() + labs(title = "Effects of Snow on Citi Bike Rider Speed", x = "Snow Depth (inches)", y = "Speed (meters per sec)")
 ```
 
 Subscribers are trying to get from point A to point B and actually go faster with more snow (likely to get out of the cold and we can assume NYC streets are well plowed despite indicated snow depth)
