@@ -72,19 +72,20 @@ masterdata$timeOfDay <- ifelse(hour(masterdata$newStartTime) >= 0 & hour(masterd
 
 
 masterdata$timeOfDay <- as.factor(masterdata$timeOfDay)
+#Day of Week 
+
+masterdata$numWeekday <- as.factor(wday(masterdata$newStartDate))
+
 
 # Create data frame for AM and one for PM
 
 masterAM <- filter(masterdata, masterdata$timeOfDay == "morning")
 masterPM <- filter(masterdata,masterdata$timeOfDay == "afternoon")
 
-#Day of Week 
-
-masterdata$numWeekday <- as.factor(wday(masterdata$newStartDate))
 
 # Create subsets for Weekday and Weekend
-weekdayData <- subset(masterdata, subset = (masterdata$numWeekday != "7" & masterdata$numWeekday != "1"))
-weekendData <- subset(masterdata, subset = (masterdata$numWeekday == "7" | masterdata$numWeekday == "1"))
+weekdayData <- subset(masterAM, subset = (masterAM$numWeekday != "7" & masterAM$numWeekday != "1"))
+weekendData <- subset(masterAM, subset = (masterAM$numWeekday == "7" | masterAM$numWeekday == "1"))
 
 
 
@@ -216,72 +217,107 @@ In the chart for the top ten stations that experience losses all ten of the stat
 
 
 ## Does Weekend vs. Weekday have an effect on asymmetric traffic? Test Hypothesis that asymmetry is due to work commutes 
+For this I compared weekdays vs . weekends for data from the first 12 hours of the data (masterAM)
 
 ```{r}
 
 #create counts of data 
-uniqueStarts <- as.data.frame(table(masterdata$start.station.name))
-uniqueEnds <- as.data.frame(table(masterdata$end.station.name))
-completeFrame <- data.frame(masterdata$start.station.name)
-completeFrame <- unique(completeFrame)
-completeFrame <- na.omit(completeFrame)
-completeFrame$numStarts <- uniqueStarts$Freq[match(completeFrame$masterdata.start.station.name, uniqueStarts$Var1)]
-completeFrame$numEnds <- uniqueEnds$Freq[match(completeFrame$masterdata.start.station.name, uniqueEnds$Var1)]
+# Unique Departures and Arrivals for Each Citi Bike Station for Week 
+StationStartsWeek <- as.data.frame(table(weekdayData$start.station.name))
+StationEndsWeek <- as.data.frame(table(weekdayData$end.station.name))
+
+StationDataWeek <- data.frame(weekdayData$start.station.name)
+StationDataWeek <- unique(StationDataWeek)
+StationDataWeek$numStarts <- StationStartsWeek$Freq[match(StationDataWeek$weekdayData.start.station.name, StationStartsWeek$Var1)]
+StationDataWeek$numEnds <- StationEndsWeek$Freq[match(StationDataWeek$weekdayData.start.station.name, StationEndsWeek$Var1)]
 
 
-#Calculate Difference
-uniqueStartsWeek <- as.data.frame(table(weekdayData$start.station.name))
-uniqueEndsWeek <- as.data.frame(table(weekdayData$end.station.name))
-uniqueStartsWeekend <- as.data.frame(table(weekendData$start.station.name))
-uniqueEndsWeekend <- as.data.frame(table(weekendData$end.station.name))
+# Compute the difference (Arrivals > Departures)
+StationDataWeek$difference <- StationDataWeek$numEnds - StationDataWeek$numStarts
+StationDataWeek <- arrange(StationDataWeek, desc(difference))
+StationDataWeek <- na.omit(StationDataWeek)
 
-completeFrame$numStartsWeek <- uniqueStartsWeek$Freq[match(completeFrame$masterdata.start.station.name, uniqueStartsWeek$Var1)]
-completeFrame$numEndsWeek <- uniqueEndsWeek$Freq[match(completeFrame$masterdata.start.station.name, uniqueEndsWeek$Var1)]
-completeFrame$differenceWeek <- completeFrame$numEndsWeek - completeFrame$numStartsWeek
-completeFrame <- na.omit(completeFrame)
+# Top 10 stations that gain bikes throughout Weekdays
+
+TopTenSurplusWeek <- head(StationDataWeek, 10)
 
 
-# Top 10 stations with surplus during the week (Mon-Fri)
-weekList <- arrange(completeFrame, desc(differenceWeek))
-head(weekList$masterdata.start.station.name, 10)
+# Top 10 stations that lose bikes throughout Weekend Mornings 
+
+TopTenDeficitWeek <-tail(StationDataWeek, 10)
+TopTenDeficitWeek <- arrange(TopTenDeficitWeek, difference)
 
 
+#create counts of data 
+# Unique Departures and Arrivals for Each Citi Bike Station for Weekend  
+StationStartsWeekend <- as.data.frame(table(weekendData$start.station.name))
+StationEndsWeekend <- as.data.frame(table(weekendData$end.station.name))
 
-# Top 10 stations with deficit during the week
-tail(weekList$masterdata.start.station.name, 10)
-completeFrame$numStartsWeekend <- uniqueStartsWeekend$Freq[match(completeFrame$masterdata.start.station.name, uniqueStartsWeekend$Var1)]
-completeFrame$numEndsWeekend <- uniqueEndsWeekend$Freq[match(completeFrame$masterdata.start.station.name, uniqueEndsWeekend$Var1)]
-completeFrame$differenceWeekend <- completeFrame$numEndsWeekend - completeFrame$numStartsWeekend
+StationDataWeekend <- data.frame(weekendData$start.station.name)
+StationDataWeekend <- unique(StationDataWeekend)
+StationDataWeekend$numStarts <- StationStartsWeekend$Freq[match(StationDataWeekend$weekendData.start.station.name, StationStartsWeekend$Var1)]
+StationDataWeekend$numEnds <- StationEndsWeekend$Freq[match(StationDataWeekend$weekendData.start.station.name, StationEndsWeekend$Var1)]
 
 
+# Compute the difference (Arrivals > Departures)
+StationDataWeekend$difference <- StationDataWeekend$numEnds - StationDataWeekend$numStarts
+StationDataWeekend <- arrange(StationDataWeekend, desc(difference))
+StationDataWeekend <- na.omit(StationDataWeekend)
 
-# Top 10 stations with surplus during the weekend 
-weekendList <- na.omit(weekendList)
-weekendList <- arrange(completeFrame, desc(differenceWeekend))
-Top10GainWeekend<- head(weekendList, 10) 
+# Top 10 stations that gain bikes throughout Weekend Mornings 
 
-# Top 10 stations with deficit during the weekend
-Top10DeficitWeekend <- tail(weekendList, 10)
+TopTenSurplusWeekend <- head(StationDataWeekend, 10)
+
+
+# Top 10 stations that lose bikes throughout Weekend Mornings 
+
+TopTenDeficitWeekend <-tail(StationDataWeekend, 10)
+TopTenDeficitWeekend <- arrange(TopTenDeficitWeekend, difference)
 
 ```
 
 
 ## Visuals 
 
-### Top Deficit during Week 
+### Top Surplus During Week Mornings
 
 ```{r}
-TenDeficitWeek <- ggplot(TopTenDeficitPM, aes(reorder(masterPM.start.station.name,  difference), difference)) +
+TenSurplusWeek <- ggplot(TopTenSurplusWeek, aes(reorder(weekdayData.start.station.name, - difference), difference)) +
     geom_col() +
     scale_x_discrete(label = function(x) stringr::str_trunc(x, 20)) +
     theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
-TenDeficitAfternoon
+TenSurplusWeek
 ```
 
+### Top Deficit during Week Mornings
 
+```{r}
+TenDeficitWeek <- ggplot(TopTenDeficitWeek, aes(reorder(weekdayData.start.station.name,  difference), difference)) +
+    geom_col() +
+    scale_x_discrete(label = function(x) stringr::str_trunc(x, 20)) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+TenDeficitWeek
+```
+### Top Surplus During Weekend Mornings
 
+```{r}
+TenSurplusWeekend <- ggplot(TopTenSurplusWeekend, aes(reorder(weekendData.start.station.name, - difference), difference)) +
+    geom_col() +
+    scale_x_discrete(label = function(x) stringr::str_trunc(x, 20)) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+TenSurplusWeekend
+```
+### Top Deficit during Weekend Mornings
 
-
+```{r}
+TenDeficitWeekend <- ggplot(TopTenDeficitWeekend, aes(reorder(weekendData.start.station.name,  difference), difference)) +
+    geom_col() +
+    scale_x_discrete(label = function(x) stringr::str_trunc(x, 20)) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+TenDeficitWeekend
+```
+### Analysis 
+Between the top deficit stations in the morning of the weekends and weekdays there is only one overlapping station: E 13th and Avenue A., further the highest deficit on weekends is around 40 (average 20 a day [40/2]) whereas during the week the highest is approximately 450(average 90 a day [450/5]). Therefore this analysis shows that there is much more asymmetry during the week as opposed to the weekend, when less people commute for work. This pattern holds true for top surplus stations in the mornings of the weekend and weekdays with no overlapping stations,and the top station during weekdays with a surplus of 375 (average 75 a day [375/5])compared to a top surplus of 55 on the weekend (average 28 a day [55/2]). In summary, this supports the hypothesis that asymmetry is mainly caused by commutes to work during the week. 
 
 
 ### What user types are using these top asymmetric stations?
@@ -295,7 +331,7 @@ CountSubscriber <- nrow(masterAM[masterAM$usertype == "Subscriber" & masterAM$st
 
 #able to find customer type for start, need to figure out for end 
 
-pie(UsersBroadway, labels = c("Customers", "Subscribers"), main = "User Type Breakdown: Broadway & E 22 St")
+
 
 ```
 
