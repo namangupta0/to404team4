@@ -150,9 +150,13 @@ TopTenDeficitPM <- arrange(TopTenDeficitPM, difference)
 
 
 TopTenSurplusAM
+
 TopTenDeficitAM
+
 TopTenSurplusPM
+
 TopTenDeficitPM
+
 ```
 
 
@@ -324,25 +328,17 @@ Between the top deficit stations in the morning of the weekends and weekdays the
 
 ```{r}
 
-CountCustomer <- nrow(masterAM[masterAM$usertype == "Customer" & masterAM$start.station.name == "Broadway & E 22 St",])
-CountSubscriber <- nrow(masterAM[masterAM$usertype == "Subscriber" & masterAM$start.station.name == "Broadway & E 22 St",])
-
-
-
-#able to find customer type for start, need to figure out for end 
+CountCustomerBroadway <- nrow(masterAM[masterAM$usertype == "Customer" & masterAM$start.station.name == "Broadway & E 22 St",])
+CountSubscriberBroadway <- nrow(masterAM[masterAM$usertype == "Subscriber" & masterAM$start.station.name == "Broadway & E 22 St",])
+CountCustomerNMoore <- nrow(masterPM[masterPM$usertype == "Customer" & masterPM$start.station.name == "North Moore St & Greenwich St",])
+CountSubscriberNMoore <- nrow(masterPM[masterPM$usertype == "Subscriber" & masterPM$start.station.name == "North Moore St & Greenwich St",])
 
 
 
 ```
 
-## Analysis 
-
-### For stations that are asymmetric, users tend to be "subscribers" as opposed to "customers". At the station "Broadway & E 22 St" of the 239 users who started trips there `r CountSubscriber` are subscribers while only `r CountCustomer`
-
-
-## What impact does day of the week have on this 
-
-
+### Analysis 
+For stations that are asymmetric, users tend to be "subscribers" as opposed to "customers". At the station "Broadway & E 22 St" of the 239 users who started trips there `r CountSubscriberBroadway` are subscribers while only `r CountCustomerBroadway`. For another station "North Moore St & Greenwich" there was only `r CountCustomerNMoore`customers while there was `r CountSubscriberNMoore` Subscribers. 
 
 #Map 
 
@@ -361,9 +357,6 @@ startlongitude <- c(-73.98955109,-74.01030064,-73.97498696
 TopTenSurplusAM$startlongitude <- startlongitude
 
 ```
-
-
-
 
 
 #Map Showing top ten surplus AM
@@ -393,6 +386,8 @@ ggmap(newyork.map) +
   theme(axis.ticks = element_blank(),axis.text = element_blank())+
   xlab('')+ylab('')
 ```
+### Analysis 
 
+As seen in the geographic groupings of the top asymmetric stations most of them are located in Lower Manhattan, specifically in areas like Midtown where there are many jobs which is true for pretty much all of these areas. Although this map only shows the top stations that gain bikes in the morning, this pattern is true for the asymmetric stations due to the overlap from the realtionship between the stations. 
 
 
