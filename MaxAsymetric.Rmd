@@ -160,7 +160,7 @@ TopTenDeficitPM
 ```
 
 
-### Visualize Top Tens 
+## Visualize Top Tens 
 
 ```{r}
 
@@ -172,7 +172,7 @@ TenSurplusMorning <- ggplot(TopTenSurplusAM, aes(reorder(masterAM.start.station.
     theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
 TenSurplusMorning
 ```
-## Analysis: 
+Analysis: 
 this chart shows a high level of asymmetry among the bike stations with station "Broadwat & E 22 St" having 384 more arrivals than departures in the morning throughout the year. 
 
 ```{r}
@@ -185,7 +185,7 @@ TenDeficitMorning
 
 
 ```
-## Analysis: 
+Analysis: 
 Asymmetric traffic patterns are also evident in the chart above, with station "8 Ave & W 31 St" experiencing 449 more departures than arrivals in the morning throughout the year. 
 
 
@@ -198,7 +198,8 @@ TenSurplusAfternoon<- ggplot(TopTenSurplusPM, aes(reorder(masterPM.start.station
     theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
 TenSurplusAfternoon
 ```
-### Analysis:
+
+Analysis:
 The evidence of asymmetric traffic is also present in this chart, with station " 8 Ave & W 31 St " leading with 418 more arrivals than departures. Some symmetry between the two time periods is seen here with a loss of 449 bikes at this same station in the morning time period throughout the year. In fact, 8 of the top 10 stations that lose bikes in the morning period are present here gaining bikes. 
 
 
@@ -215,7 +216,7 @@ TenDeficitAfternoon
 
 ```
 
-### Analysis:
+Analysis:
 
 In the chart for the top ten stations that experience losses all ten of the stations that experience overflow of bikes in the morning time perion are present here. 
 
@@ -283,7 +284,7 @@ TopTenDeficitWeekend <- arrange(TopTenDeficitWeekend, difference)
 
 ## Visuals 
 
-### Top Surplus During Week Mornings
+## Top Surplus During Week Mornings
 
 ```{r}
 TenSurplusWeek <- ggplot(TopTenSurplusWeek, aes(reorder(weekdayData.start.station.name, - difference), difference)) +
@@ -293,7 +294,7 @@ TenSurplusWeek <- ggplot(TopTenSurplusWeek, aes(reorder(weekdayData.start.statio
 TenSurplusWeek
 ```
 
-### Top Deficit during Week Mornings
+## Top Deficit during Week Mornings
 
 ```{r}
 TenDeficitWeek <- ggplot(TopTenDeficitWeek, aes(reorder(weekdayData.start.station.name,  difference), difference)) +
@@ -311,7 +312,7 @@ TenSurplusWeekend <- ggplot(TopTenSurplusWeekend, aes(reorder(weekendData.start.
     theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
 TenSurplusWeekend
 ```
-### Top Deficit during Weekend Mornings
+## Top Deficit during Weekend Mornings
 
 ```{r}
 TenDeficitWeekend <- ggplot(TopTenDeficitWeekend, aes(reorder(weekendData.start.station.name,  difference), difference)) +
@@ -320,11 +321,11 @@ TenDeficitWeekend <- ggplot(TopTenDeficitWeekend, aes(reorder(weekendData.start.
     theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
 TenDeficitWeekend
 ```
-### Analysis 
+Analysis:
 Between the top deficit stations in the morning of the weekends and weekdays there is only one overlapping station: E 13th and Avenue A., further the highest deficit on weekends is around 40 (average 20 a day [40/2]) whereas during the week the highest is approximately 450(average 90 a day [450/5]). Therefore this analysis shows that there is much more asymmetry during the week as opposed to the weekend, when less people commute for work. This pattern holds true for top surplus stations in the mornings of the weekend and weekdays with no overlapping stations,and the top station during weekdays with a surplus of 375 (average 75 a day [375/5])compared to a top surplus of 55 on the weekend (average 28 a day [55/2]). In summary, this supports the hypothesis that asymmetry is mainly caused by commutes to work during the week. 
 
 
-### What user types are using these top asymmetric stations?
+## What user types are using these top asymmetric stations?
 
 ```{r}
 
@@ -337,7 +338,7 @@ CountSubscriberNMoore <- nrow(masterPM[masterPM$usertype == "Subscriber" & maste
 
 ```
 
-### Analysis 
+Analysis:
 For stations that are asymmetric, users tend to be "subscribers" as opposed to "customers". At the station "Broadway & E 22 St" of the 239 users who started trips there `r CountSubscriberBroadway` are subscribers while only `r CountCustomerBroadway`. For another station "North Moore St & Greenwich" there was only `r CountCustomerNMoore`customers while there was `r CountSubscriberNMoore` Subscribers. 
 
 #Map 
@@ -359,7 +360,8 @@ TopTenSurplusAM$startlongitude <- startlongitude
 ```
 
 
-#Map Showing top ten surplus AM
+##Map Showing top ten surplus AM
+
 
 ```{r}
 
