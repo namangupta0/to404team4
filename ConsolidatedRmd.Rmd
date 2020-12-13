@@ -1,0 +1,715 @@
+---
+title: "Consolidated Data Analysis"
+author: "Ashish Urval, Brian Zhao, Dawson Wang, Max Cornellier, Naman Gupta"
+date: "12/12/2020"
+output:
+  html_document:
+    number_sections: true
+    toc: true
+    toc_float:
+      toc_collapsed: true
+    toc_depth: 4
+    theme: lumen
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Initialize
+
+## Libraries
+```{r}
+library(lubridate)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(gganimate)
+library(gifski)
+library(png)
+library(data.table)
+library(geosphere)
+library(ggmap)
+```
+
+## Read 1% Sample From Raw Data 
+```{r, eval = FALSE}
+#Weather data already incorporated into SampleCitiBike.csv
+rawdata <- read.csv("SampleCitiBike.csv")
+sampleData <- sample_frac(rawdata, 0.01)
+write.csv(sampleData, "new_MASTER_01_data.csv")
+```
+
+## Read Master File
+```{r}
+masterdata <- read.csv("new_MASTER_01_data.csv")
+```
+
+## Data Cleaning
+```{r}
+masterdata$X <- NULL
+masterdata$starttime <- NULL
+masterdata$stoptime <- NULL
+masterdata$start.station.id <- as.factor(masterdata$start.station.id)
+masterdata$start.station.name <- as.factor(masterdata$start.station.name)
+masterdata$end.station.id <- as.factor(masterdata$end.station.id)
+masterdata$end.station.name <- as.factor(masterdata$end.station.name)
+masterdata$bikeid <- as.factor(masterdata$bikeid)
+masterdata$usertype <- as.factor(masterdata$usertype)
+masterdata <- rename(masterdata, startTime = newStartTime, stopTime = newStopTime)
+masterdata$startTime <- as.POSIXct(strptime(masterdata$startTime, "%Y-%m-%d %H:%M:%S"))
+masterdata$stopTime <- as.POSIXct(strptime(masterdata$stopTime, "%Y-%m-%d %H:%M:%S"))
+masterdata$startDate <- as.Date(masterdata$startTime)
+masterdata$stopDate <- as.Date(masterdata$stopTime)
+masterdata$distMeters <- distHaversine(cbind(masterdata$start.station.latitude, masterdata$start.station.longitude), cbind(masterdata$end.station.latitude, masterdata$end.station.longitude))
+masterdata$ageGroup <- as.factor(ifelse(masterdata$birth.year >= 2000, "GenZ", ifelse(masterdata$birth.year >= 1981, "Millennial", ifelse(masterdata$birth.year >= 1965, "GenX", ifelse(masterdata$birth.year >= 1946, "Boomer", ifelse(masterdata$birth.year >= 1928, "Silent", "VeryOld"))))))
+masterdata$ageGroup <- factor(masterdata$ageGroup, levels = c("GenZ", "Millennial", "GenX", "Boomer", "Silent", "VeryOld"))
+masterdata$startMonth <- month(masterdata$startDate)
+masterdata$stopMonth <- month(masterdata$stopDate)
+masterdata$startMonthFactor <- as.factor(month(masterdata$startDate))
+masterdata$stopMonthFactor <- as.factor(month(masterdata$stopDate))
+masterdata$seasonStart <- as.factor(ifelse(masterdata$startMonth >= 3 & masterdata$startMonth <= 5, "Spring", ifelse(masterdata$startMonth >= 6 & masterdata$startMonth <= 8, "Summer", ifelse(masterdata$startMonth >= 9 & masterdata$startMonth <= 11, "Fall", "Winter"))))
+masterdata$seasonStart <- factor(masterdata$startMonth, levels = c("Spring", "Summer", "Fall", "Winter"))
+masterdata$numWeekday <- as.factor(wday(masterdata$startDate))
+#Defining rush hour as 6-10AM and 4-8PM
+masterdata$rushHour <- as.factor(ifelse(masterdata$numWeekday == 1 | masterdata$numWeekday == 7, "No", ifelse(hour(masterdata$startTime) < 6 | hour(masterdata$startTime) > 10 & hour(masterdata$startTime) < 16 | hour(masterdata$startTime) > 20, "No", "Yes")))
+masterdata <- rename(masterdata, maxTemp = TMAX, minTemp = TMIN)
+masterdata$weekNum <- as.numeric(strftime(masterdata$startDate, format = "%V"))
+masterdata$speedMetersperSec <- masterdata$distMeters / masterdata$tripduration
+masterdata <- rename(masterdata, avgTemp = TAVG)
+masterdata$tempFeel <- as.factor(ifelse(masterdata$maxTemp < 40, "Frigid", ifelse(masterdata$maxTemp < 58, "Cold", ifelse(masterdata$maxTemp < 65, "Cool", ifelse(masterdata$maxTemp < 75, "Warm", ifelse(masterdata$maxTemp < 95, "Hot", "Blazing"))))))
+masterdata$tempFeel <- factor(masterdata$tempFeel, levels = c("Frigid", "Cold", "Cool", "Warm", "Hot", "Blazing"))
+masterdata$gender <- as.factor(ifelse(masterdata$gender == "0", "Unknown", ifelse(masterdata$gender == "1", "Male", "Female")))
+masterdata$timeOfDay <- ifelse(hour(masterdata$startTime) >= 0 & hour(masterdata$startTime) < 12, "morning", ifelse(hour(masterdata$startTime) >= 12 & hour(masterdata$startTime) <=24, "afternoon","night"))
+masterdata$roundedSNOW <- floor(masterdata$SNOW)
+
+masterAM <- filter(masterdata, masterdata$timeOfDay == "morning")
+masterPM <- filter(masterdata,masterdata$timeOfDay == "afternoon")
+
+weekdayData <- subset(masterAM, subset = (masterAM$numWeekday != "7" & masterAM$numWeekday != "1"))
+weekendData <- subset(masterAM, subset = (masterAM$numWeekday == "7" | masterAM$numWeekday == "1"))
+```
+
+# Data Analysis
+
+## Weather
+### Temperature
+#### Ride Distance
+```{r}
+#Ride Distance by Maximum Temperature by Gender 
+ggplot(data = masterdata, aes(x = maxTemp, y = distMeters, colour = gender)) + geom_point() + labs(x = "Maximum Temperature", y = "Ride Distance (meters)", colour = "Gender")
+ggplot(data = masterdata, aes(x = maxTemp, y = distMeters, colour = gender)) + geom_smooth() + labs(x = "Maximum Temperature", y = "Ride Distance (meters)", colour = "Gender")
+ggplot(data = masterdata, aes(x = maxTemp, y = distMeters, colour = gender)) + geom_violin() + labs(x = "Maximum Temperature", y = "Ride Distance (meters)", colour = "Gender")
+ggplot(data = masterdata, aes(x = maxTemp, y = distMeters, colour = gender)) + geom_boxplot() + labs(x = "Maximum Temperature", y = "Ride Distance (meters)", colour = "Gender")
+#Ride Distance by Maximum Temperature by User Type
+ggplot(data = masterdata, aes(x = maxTemp, y = distMeters, colour = usertype)) + geom_point() + labs(x = "Maximum Temperature", y = "Ride Distance (meters)", colour = "User Type")
+ggplot(data = masterdata, aes(x = maxTemp, y = distMeters, colour = usertype)) + geom_smooth() + labs(x = "Maximum Temperature", y = "Ride Distance (meters)", colour = "User Type")
+ggplot(data = masterdata, aes(x = maxTemp, y = distMeters, colour = usertype)) + geom_violin() + labs(x = "Maximum Temperature", y = "Ride Distance (meters)", colour = "User Type")
+ggplot(data = masterdata, aes(x = maxTemp, y = distMeters, colour = usertype)) + geom_boxplot() + labs(x = "Maximum Temperature", y = "Ride Distance (meters)", colour = "User Type")
+#Ride Distance by Minimum Temperature by Gender
+ggplot(data = masterdata, aes(x = minTemp, y = distMeters, colour = gender)) + geom_point() + labs(x = "Minimum Temperature", y = "Ride Distance (meters)", colour = "Gender")
+ggplot(data = masterdata, aes(x = minTemp, y = distMeters, colour = gender)) + geom_smooth() + labs(x = "Minimum Temperature", y = "Ride Distance (meters)", colour = "Gender")
+ggplot(data = masterdata, aes(x = minTemp, y = distMeters, colour = gender)) + geom_violin() + labs(x = "Minimum Temperature", y = "Ride Distance (meters)", colour = "Gender")
+ggplot(data = masterdata, aes(x = minTemp, y = distMeters, colour = gender)) + geom_boxplot() + labs(x = "Minimum Temperature", y = "Ride Distance (meters)", colour = "Gender")
+#Ride Distance by Minimum Temperature by User Type
+ggplot(data = masterdata, aes(x = minTemp, y = distMeters, colour = usertype)) + geom_point() + labs(x = "Minimum Temperature", y = "Ride Distance (meters)", colour = "User Type")
+ggplot(data = masterdata, aes(x = minTemp, y = distMeters, colour = usertype)) + geom_smooth() + labs(x = "Minimum Temperature", y = "Ride Distance (meters)", colour = "User Type")
+ggplot(data = masterdata, aes(x = minTemp, y = distMeters, colour = usertype)) + geom_violin() + labs(x = "Minimum Temperature", y = "Ride Distance (meters)", colour = "User Type")
+ggplot(data = masterdata, aes(x = minTemp, y = distMeters, colour = usertype)) + geom_boxplot() + labs(x = "Minimum Temperature", y = "Ride Distance (meters)", colour = "User Type")
+```
+
+#### Ride Duration
+```{r}
+#By Maximum Temperature By Gender
+ggplot(data = masterdata[masterdata$tripduration < 10000,], aes(x = maxTemp, y = tripduration, colour = gender)) + geom_point() + labs(x = "Maximum Temperature", y = "Trip Duration (seconds)", colour = "Gender")
+ggplot(data = masterdata[masterdata$tripduration < 10000,], aes(x = maxTemp, y = tripduration, colour = gender)) + geom_smooth() + labs(x = "Maximum Temperature", y = "Trip Duration (seconds)", colour = "Gender")
+ggplot(data = masterdata[masterdata$tripduration < 10000,], aes(x = maxTemp, y = tripduration, colour = gender)) + geom_violin() + labs(x = "Maximum Temperature", y = "Trip Duration (seconds)", colour = "Gender")
+ggplot(data = masterdata[masterdata$tripduration < 10000,], aes(x = maxTemp, y = tripduration, colour = gender)) + geom_boxplot() + labs(x = "Maximum Temperature", y = "Trip Duration (seconds)", colour = "Gender")
+#By Maximum Temperature By User Type
+ggplot(data = masterdata[masterdata$tripduration < 10000,], aes(x = maxTemp, y = tripduration, colour = usertype)) + geom_point() + labs(x = "Maximum Temperature", y = "Trip Duration (seconds)", colour = "User Type")
+ggplot(data = masterdata[masterdata$tripduration < 10000,], aes(x = maxTemp, y = tripduration, colour = usertype)) + geom_smooth() + labs(x = "Maximum Temperature", y = "Trip Duration (seconds)", colour = "User Type")
+ggplot(data = masterdata[masterdata$tripduration < 10000,], aes(x = maxTemp, y = tripduration, colour = usertype)) + geom_violin() + labs(x = "Maximum Temperature", y = "Trip Duration (seconds)", colour = "User Type")
+ggplot(data = masterdata[masterdata$tripduration < 10000,], aes(x = maxTemp, y = tripduration, colour = usertype)) + geom_boxplot() + labs(x = "Maximum Temperature", y = "Trip Duration (seconds)", colour = "User Type")
+#By Minimum Temperature By Gender
+ggplot(data = masterdata[masterdata$tripduration < 10000,], aes(x = minTemp, y = tripduration, colour = gender)) + geom_point() + labs(x = "Minimum Temperature", y = "Trip Duration (seconds)", colour = "Gender")
+ggplot(data = masterdata[masterdata$tripduration < 10000,], aes(x = minTemp, y = tripduration, colour = gender)) + geom_smooth() + labs(x = "Minimum Temperature", y = "Trip Duration (seconds)", colour = "Gender")
+ggplot(data = masterdata[masterdata$tripduration < 10000,], aes(x = minTemp, y = tripduration, colour = gender)) + geom_violin() + labs(x = "Minimum Temperature", y = "Trip Duration (seconds)", colour = "Gender")
+ggplot(data = masterdata[masterdata$tripduration < 10000,], aes(x = minTemp, y = tripduration, colour = gender)) + geom_boxplot() + labs(x = "Minimum Temperature", y = "Trip Duration (seconds)", colour = "Gender")
+#By Minimum Temperature By User Type
+ggplot(data = masterdata[masterdata$tripduration < 10000,], aes(x = minTemp, y = tripduration, colour = usertype)) + geom_point() + labs(x = "Minimum Temperature", y = "Trip Duration (seconds)", colour = "User Type")
+ggplot(data = masterdata[masterdata$tripduration < 10000,], aes(x = minTemp, y = tripduration, colour = usertype)) + geom_smooth() + labs(x = "Minimum Temperature", y = "Trip Duration (seconds)", colour = "User Type")
+ggplot(data = masterdata[masterdata$tripduration < 10000,], aes(x = minTemp, y = tripduration, colour = usertype)) + geom_violin() + labs(x = "Minimum Temperature", y = "Trip Duration (seconds)", colour = "User Type")
+ggplot(data = masterdata[masterdata$tripduration < 10000,], aes(x = minTemp, y = tripduration, colour = usertype)) + geom_boxplot() + labs(x = "Minimum Temperature", y = "Trip Duration (seconds)", colour = "User Type")
+```
+
+#### Total Rides
+```{r}
+#By Day of Week
+masterdata %>%
+  group_by(startDate, numWeekday) %>%
+  summarise(
+    numRides = mean(n())
+  ) %>%
+  ggplot(aes(x = numWeekday, y = numRides)) + geom_boxplot() + labs(x = "Weekday (1 = Sunday, 7 = Saturday)", y = "Average Number of CitiBike Rides")
+#By Maximum Temperature
+masterdata %>%
+  group_by(maxTemp) %>%
+  summarise(
+    numRides = mean(n())
+  ) %>%
+  ggplot(aes(x = maxTemp, y = numRides)) + geom_point() + labs(x = "Maximum Temperature (F)", y = "Average Number of CitiBike Rides")
+#By Minimum Temperature
+masterdata %>%
+  group_by(minTemp) %>%
+  summarise(
+    numRides = mean(n())
+  ) %>%
+  ggplot(aes(x = minTemp, y = numRides)) + geom_point() + labs(x = "Minimum Temperature (F)", y = "Average Number of CitiBike Rides")
+#By Day of Week by Temperature (Not super meaningful - keeping this here as a template)
+masterdata %>%
+  group_by(weekNum, numWeekday) %>%
+  summarise(
+    numRides = mean(n()),
+    temp = maxTemp
+  ) %>%
+  ggplot(aes(x = temp, y = numRides)) + geom_boxplot() + transition_time(weekNum) + labs(title = "Week Number: {frame_time}")
+```
+
+#### Speed
+```{r}
+#Speed by Maximum Temperature by Gender
+ggplot(data = masterdata, aes(x = maxTemp, y = speedMetersperSec, colour = gender)) + geom_point() + labs(x = "Maximum Temperature", y = "Speed (meters/s)", colour = "Gender")
+ggplot(data = masterdata, aes(x = maxTemp, y = speedMetersperSec, colour = gender)) + geom_smooth() + labs(x = "Maximum Temperature", y = "Speed (meters/s)", colour = "Gender")
+ggplot(data = masterdata, aes(x = maxTemp, y = speedMetersperSec, colour = gender)) + geom_violin() + labs(x = "Maximum Temperature", y = "Speed (meters/s)", colour = "Gender")
+ggplot(data = masterdata, aes(x = maxTemp, y = speedMetersperSec, colour = gender)) + geom_boxplot() + labs(x = "Maximum Temperature", y = "Speed (meters/s)", colour = "Gender")
+#Speed by Maximum Temperature by User Type
+ggplot(data = masterdata, aes(x = maxTemp, y = speedMetersperSec, colour = usertype)) + geom_point() + labs(x = "Maximum Temperature", y = "Speed (meters/s)", colour = "User Type")
+ggplot(data = masterdata, aes(x = maxTemp, y = speedMetersperSec, colour = usertype)) + geom_smooth() + labs(x = "Maximum Temperature", y = "Speed (meters/s)", colour = "User Type")
+ggplot(data = masterdata, aes(x = maxTemp, y = speedMetersperSec, colour = usertype)) + geom_violin() + labs(x = "Maximum Temperature", y = "Speed (meters/s)", colour = "User Type")
+ggplot(data = masterdata, aes(x = maxTemp, y = speedMetersperSec, colour = usertype)) + geom_boxplot() + labs(x = "Maximum Temperature", y = "Speed (meters/s)", colour = "User Type")
+#Speed by Minimum Temperature by Gender
+ggplot(data = masterdata, aes(x = minTemp, y = speedMetersperSec, colour = gender)) + geom_point() + labs(x = "Minimum Temperature", y = "Speed (meters/s)", colour = "Gender")
+ggplot(data = masterdata, aes(x = minTemp, y = speedMetersperSec, colour = gender)) + geom_smooth() + labs(x = "Minimum Temperature", y = "Speed (meters/s)", colour = "Gender")
+ggplot(data = masterdata, aes(x = minTemp, y = speedMetersperSec, colour = gender)) + geom_violin() + labs(x = "Minimum Temperature", y = "Speed (meters/s)", colour = "Gender")
+ggplot(data = masterdata, aes(x = minTemp, y = speedMetersperSec, colour = gender)) + geom_boxplot() + labs(x = "Minimum Temperature", y = "Speed (meters/s)", colour = "Gender")
+#Speed by Minimum Temperature by User Type
+ggplot(data = masterdata, aes(x = minTemp, y = speedMetersperSec, colour = usertype)) + geom_point() + labs(x = "Minimum Temperature", y = "Speed (meters/s)", colour = "User Type")
+ggplot(data = masterdata, aes(x = minTemp, y = speedMetersperSec, colour = usertype)) + geom_smooth() + labs(x = "Minimum Temperature", y = "Speed (meters/s)", colour = "User Type")
+ggplot(data = masterdata, aes(x = minTemp, y = speedMetersperSec, colour = usertype)) + geom_violin() + labs(x = "Minimum Temperature", y = "Speed (meters/s)", colour = "User Type")
+ggplot(data = masterdata, aes(x = minTemp, y = speedMetersperSec, colour = usertype)) + geom_boxplot() + labs(x = "Minimum Temperature", y = "Speed (meters/s)", colour = "User Type")
+```
+
+#### Station Utilization
+```{r}
+masterdata %>%
+  group_by(tempFeel, start.station.id) %>%
+  summarise(
+    numRides = n()
+  ) %>%
+  arrange(desc(numRides)) %>%
+  slice(1:5) %>%
+  ggplot(aes(x = tempFeel, y = numRides, colour = start.station.id )) + geom_boxplot()
+
+masterdata %>%
+  group_by(tempFeel, end.station.id) %>%
+  summarise(
+    numRides = n()
+  ) %>%
+  slice(1:5) %>%
+  ggplot(aes(x = reorder(end.station.id, numRides, na.rm = TRUE), y = numRides)) + geom_boxplot() + transition_states(tempFeel, transition_length = 2, state_length = 1) + enter_fade() + exit_shrink() + ease_aes('sine-in-out') + labs(title = "Weather Feel: {closest_state}")
+```
+
+### Precipitation
+#### Check Data
+```{r}
+nrow(masterdata[masterdata$PRCP < .5,])
+nrow(masterdata[masterdata$PRCP >= .5 & masterdata$PRCP < 1,])
+nrow(masterdata[masterdata$PRCP >= 1 & masterdata$PRCP < 1.5,])
+nrow(masterdata[masterdata$PRCP >= 1.5,])
+```
+
+These numbers will guide the analysis below, as it is important to note that, while the averages on the y-axis may provide suggest certain insights, looking at the confidence intervals at various ranges will be useful in drawing meaningful insights. As these metrics indicate, PRCP certainly has a negative correlation with number of rides that occur, which suggests that bikers in higher PRCP may not be reflective of the typical Citibike biker. 
+
+#### Ride Distance
+```{r}
+#prcp vs Haversine Distance (distMeters) by gender
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=distMeters, colour=gender)) + geom_point()
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=distMeters, colour=gender)) + geom_smooth()
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=distMeters, colour=gender)) + geom_violin()
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=distMeters, colour=gender)) + geom_boxplot()
+
+#prcp vs tripduration by usertype
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=distMeters, colour=usertype)) + geom_point()
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=distMeters, colour=usertype)) + geom_smooth()
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=distMeters, colour=usertype)) + geom_violin()
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=distMeters, colour=usertype)) + geom_boxplot()
+```
+
+Amongst unknown genders, PRCP is associated with a decrease in distance. For males and females, there seems to be a decrease in distance as PRCP increases to a certain level, after which the rate of decrease diminishes. For females, the distance begins to increase, whereas for males it mostly plateaus. This, as seen previously, may be reflective of who is biking in these various PRCP ranges. In the middle range, we can infer that people try to minimize distance if they can feasibly. Perhaps as PRCP becomes drastic, only those with a need to bike will be out, who may be not be able to adjust the distance of their trip. The disparity between male response and female response here is curious. Customers, who are likely recreational/infrequent users, predictably decrease distance in correlation to increased PRCP. Subscribers reflect a response similar to the females mentioned previously.
+
+```{r}
+ggplot(data=masterdata, aes(x=PRCP,y=distMeters)) + geom_point() + facet_wrap(~ startMonthFactor)
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP,y=distMeters)) + geom_smooth() + facet_wrap(~ startMonthFactor)
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP,y=distMeters,colour=usertype)) + geom_smooth() + facet_wrap(~ startMonthFactor)
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP,y=distMeters,colour=gender)) + geom_smooth() + facet_wrap(~ startMonthFactor)
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP,y=distMeters,colour=gender)) + geom_smooth() + facet_wrap(~ usertype)
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP,y=distMeters,colour=usertype)) + geom_smooth() + facet_wrap(~ gender)
+```
+
+In colder months and August, it seems that PRCP does not have significant correlation to average distance. In other months, the correlation fluctuates or steadily yields lower distance as PRCP increases. Interestingly, April which is a very rainy month traditionally seems to have the greatest fluctuation for distance's correlation with PRCP. Customers seem reliably unaffected by PRCP values in aggregate, except for a few interesting examples in August and May. Subscribers, again, vary greatly in their response, which may suggest that we must look into the behavioral trends of specific users to gain a full picture. While most insights from this data is fundamentally speculative, it is interesting to note the disparity in how females, males, and unknown genders vary in their response to PRCP, when separated into usertypes. Female customers seem unbothered, while female subscribers decrease distances up until a certain point and then increase again (potentially due to only necessary rides being made, which are not responsive to PRCP changes). Male customers strongly decrease distance as PRCP increases, while male subscribers reflect a similar pattern as female subscribers (potentially due to the aforementioned insight). Similar insights are yielded by separating user types into genders.
+
+#### Ride Duration
+```{r}
+ggplot(data=masterdata, aes(x=startDate, y=tripduration, colour=gender)) + geom_point()
+
+#newStartDate vs tripduration by gender
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=startDate, y=tripduration, colour=gender)) + geom_point()
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=startDate, y=tripduration, colour=gender)) + geom_smooth()
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=startDate, y=tripduration, colour=gender)) + geom_violin()
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=startDate, y=tripduration, colour=gender)) + geom_boxplot()
+
+#newStartDate vs tripduration by usertype
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=startDate, y=tripduration, colour=usertype)) + geom_point()
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=startDate, y=tripduration, colour=usertype)) + geom_smooth()
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=startDate, y=tripduration, colour=usertype)) + geom_violin()
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=startDate, y=tripduration, colour=usertype)) + geom_boxplot()
+```
+
+As one might expect, trip duration increases during warmer months and decreases as temperature drops; this suggests that traveling longer distances is either more necessary or enjoyable in warmer months. Females on average have longer trips than men. Unknown gender has the highest trip duration, and customers have higher trip durations than subscribers. Perhaps customers do not have to reveal their gender information, and perhaps these customers differ in ways other than just status as it pertains to their trip duration. Citibike managers should keep in mind that any sort of system overhauls, construction, or repair should be placed in a month with less demand so the company does not miss out on revenue from peak times.
+
+```{r}
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=tripduration, colour=gender)) + geom_point()
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=tripduration, colour=gender)) + geom_smooth()
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=tripduration, colour=gender)) + geom_violin()
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=tripduration, colour=gender)) + geom_boxplot()
+
+#prcp vs tripduration by usertype
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=tripduration, colour=usertype)) + geom_point()
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=tripduration, colour=usertype)) + geom_smooth()
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=tripduration, colour=usertype)) + geom_violin()
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP, y=tripduration, colour=usertype)) + geom_boxplot()
+```
+
+As precipitation increases, trip duration decreases. Females again have higher average trip duration, but they seem to have a varied correlation to preciptation. Perhaps the rise/plateau at the high PRCP levels for both males and females is influenced by people who use Citibike out of necessity. This means that the primary decrease in trip duration as PRCP increases is logical, as people who can make their trips shorter will. However, beyond a certain point, the people who cannot adjust their travel will then be bringing up the overall average trip duration. Unknown genders, who may be those who are not regular users of Citibike, are likely casual bikers who will decrease their trip lengths as much as posssible, and this is what the visualization depicts. It is curious that customers have inconsistent correlation to PRCP values. Perhaps we can infer that some rain deters users from taking long trips, while there is a certain amount of rain that is considered pleasant; this certain amount can also be an amount where casual riders do not ride, and so only bikers who bike out of need are biking in the middle range. After this middle range, perhaps even those bikers begin having to compromise on their trip lengths. Biking speed may also fluctuate and be responsible for trip duration changes.
+
+```{r}
+averagePRCPMonthly <- tapply(masterdata$PRCP,masterdata$startMonthFactor,mean,)
+plot(averagePRCPMonthly,xlab="Month",ylab="Average PRCP")
+
+averageTripDurationMonthly <- tapply(masterdata$tripduration,masterdata$startMonthFactor,mean,)
+plot(averageTripDurationMonthly,xlab="Month",ylab="Average Trip Duration")
+
+numTripsMonthly <- table(masterdata$startMonth)
+
+plot(x=averagePRCPMonthly, y=averageTripDurationMonthly)
+
+plot(x=averagePRCPMonthly, y=numTripsMonthly)
+
+ggplot(data=masterdata, aes(x=PRCP,y=tripduration)) + geom_point() + facet_wrap(~ startMonthFactor)
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP,y=tripduration)) + geom_smooth() + facet_wrap(~ startMonthFactor)
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP,y=tripduration,colour=usertype)) + geom_smooth() + facet_wrap(~ startMonthFactor)
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP,y=tripduration,colour=gender)) + geom_smooth() + facet_wrap(~ startMonthFactor)
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP,y=tripduration,colour=gender)) + geom_smooth() + facet_wrap(~ usertype)
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=PRCP,y=tripduration,colour=usertype)) + geom_smooth() + facet_wrap(~ gender)
+```
+
+It does not appear that months with higher average PRCP correspond to lower average trip durations. This may be due to the rainier months also being warmer and more pleasant than harsh winters of NY. Perhaps the pleasant days in rainy months are very positive for bikers in general, to the extent that they compensate for rainy days. We can see that, in different months, the amount of PRCP has varied correlations with trip duration. The winter months have little to know average tripduration changes as PRCP increases, which may reflect that bikers who ride during these times are not responsive to PRCP. Customers primarily decrease trip duration as PRCP increases, except in December and June, which may be months where tourists are determined to bike no matter the PRCP; subscribers vary greatly in their responses to PRCP in each month. Similar insights can be drawn when arranging the data by gender and usertype.
+
+#### Speed
+```{r}
+ggplot(data=masterdata, aes(x=PRCP,y=speedMetersperSec)) + geom_point()
+
+ggplot(data=masterdata, aes(x=PRCP,y=speedMetersperSec)) + geom_smooth()
+
+ggplot(data=masterdata, aes(x=PRCP,y=speedMetersperSec, colour = gender)) + geom_smooth()
+
+ggplot(data=masterdata, aes(x=PRCP,y=speedMetersperSec, colour = usertype)) + geom_smooth() + facet_wrap(~ ageGroup)
+```
+
+PRCP has a general positive correlation with speed, which may indicate that bikers bike faster in rainier weather. It is important to note certain fluctuations in this correlation. Perhaps the dip in speed around PRCP=1 may indicate that this amount of rain is particularly difficult to bike in, which causes bikers to slow down.
+
+### Snowfall
+#### Ride Distance
+```{r}
+ggplot(data=masterdata[masterdata$distMeters < 10000,], aes(x=SNOW, y=distMeters, colour=usertype)) + geom_smooth() + labs(title = "Effects of Snow on Citi Bike Ride Distance", x = "Snow Depth (inches)", y = "Distance (meters)")
+
+ggplot(data=masterdata[masterdata$distMeters < 10000,], aes(x=SNOW, y=distMeters, colour=usertype)) + geom_point(alpha = 0.5) + geom_jitter() + labs(title = "Effects of Snow on Citi Bike Ride Distance", x = "Snow Depth (inches)", y = "Distance (meters)")
+
+ggplot(data=masterdata[masterdata$distMeters < 10000,], aes(x=roundedSNOW, y=distMeters, colour=usertype)) + geom_point(alpha = 0.5) + geom_jitter() + labs(title = "Effects of Snow on Citi Bike Ride Distance", x = "Snow Depth (rounded inches)", y = "Distance (meters)")
+```
+
+We can see the trend that customers generally ride a consistent distance regardless of snow, while subscribers tend to travel shorter distances when there is snow. This is likely due to the fact that subscribers or frequent users are more likely to be locals to NYC and use other forms of transportation instead (i.e. subway).
+
+However, if we also factor in the amount of rides that are happening, we can see that subscribers make up a larger percentage of the total rides compared to customers whenever there is snow on the ground. Subscribers who are more likely to use a CitiBike than a regular customer in the snow (but will also ride a shorter distance).
+
+#### Ride Duration
+```{r}
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=SNOW, y=tripduration, colour=usertype)) + geom_smooth() + labs(title = "Effects of Snow on Citi Bike Ride Duration", x = "Snow Depth (inches)", y = "Trip Duration (secs)")
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=SNOW, y=tripduration, colour=usertype)) + geom_point(alpha = 0.5) + geom_jitter() + labs(title = "Effects of Snow on Citi Bike Ride Duration", x = "Snow Depth (inches)", y = "Trip Duration (secs)")
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=roundedSNOW, y=tripduration, colour=usertype)) + geom_point(alpha = 0.5) + geom_jitter() + labs(title = "Effects of Snow on Citi Bike Ride Duration", x = "Snow Depth (rounded inches)", y = "Trip Duration (secs)")
+
+totalRides <- tapply(masterdata$tripduration, masterdata$SNOW, mean, na.rm = TRUE)
+barplot(totalRides)
+
+totalRides <- tapply(masterdata$tripduration, masterdata$roundedSNOW, mean, na.rm = TRUE)
+barplot(totalRides)
+```
+
+Trip duration drastically decreases when there is snow on the ground this is likely due to a combination of temperature and safety concerns. However, we see a much steeper drop off in ridership and trip duration among regular customers than subscribers.
+
+A potential solution to increase business would be to increase incentives for non-subscribers to ride when their is snow (is pricing a concern for them?) >> risk: liability?
+
+#### Total Rides
+```{r}
+# Count - Raw Data
+ggplot(data=masterdata, aes(x=SNOW)) + geom_bar()
+ggplot(data=masterdata[masterdata$SNOW > 0, ], aes(x=SNOW)) + geom_bar()
+
+# Count - Rounded Values
+ggplot(data=masterdata, aes(x=roundedSNOW)) + geom_bar()
+ggplot(data=masterdata[masterdata$roundedSNOW > 0, ], aes(x=roundedSNOW)) + geom_bar()
+
+# Average - Rounded Values
+masterdata %>%
+  group_by(roundedSNOW) %>%
+  summarise(
+    numRides = mean(n())
+  ) %>%
+  ggplot(aes(x = roundedSNOW, y = numRides)) + geom_point() + ylim(0,1000) + labs(x = "Snow Depth", y = "Average Number of CitiBike Rides")
+```
+
+As expected the more snow there is on the ground the less riders (on average per day with that amount of snow) there are. The second plots doesn't include 0 values to remove days where there is no snow on the ground.
+
+#### Demographics
+```{r}
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=SNOW, y=tripduration, colour=gender)) + geom_smooth() + labs(title = "Effects of Snow on Citi Bike Riders based on Gender", x = "Snow Depth (inches)", y = "Trip Duration (secs)")
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=SNOW, y=tripduration, colour=gender)) + geom_point(alpha = 0.25) + geom_jitter() + labs(title = "Effects of Snow on Citi Bike Riders based on Gender", x = "Snow Depth (inches)", y = "Trip Duration (secs)")
+
+ggplot(data=masterdata[masterdata$tripduration < 10000,], aes(x=roundedSNOW, y=tripduration, colour=gender)) + geom_point(alpha = 0.25) + geom_jitter() + labs(title = "Effects of Snow on Citi Bike Riders based on Gender", x = "Snow Depth (rounded inches)", y = "Trip Duration (secs)")
+```
+
+It seems that males are more likely to continue riding CitiBikes when there is snow on the ground than Females or Unknowns (which is expected as Unknowns fall largely in the non-subscriber category), but the difference is minimal.
+
+#### Speed
+```{r}
+ggplot(data=masterdata, aes(x=SNOW, y=speedMetersperSec, colour=usertype)) + geom_smooth() + labs(title = "Effects of Snow on Citi Bike Rider Speed", x = "Snow Depth (inches)", y = "Speed (meters per sec)")
+```
+
+Subscribers are trying to get from point A to point B and actually go faster with more snow (likely to get out of the cold and we can assume NYC streets are well plowed despite indicated snow depth)
+
+## Asymmetric Traffic
+### CitiBike Utilization by Hour
+```{r}
+masterdata %>%
+  mutate(Timings = as.POSIXct(startTime)) %>%
+  group_by(lubridate::hour(Timings)) %>%
+  summarise(count=n()) %>%
+  arrange(desc(count))
+```
+
+### Trip Duration by Hour
+```{r}
+hour <- format(as.POSIXct(masterdata$startTime, format="%H:%M:%S"),"%H")
+hourie <- as.factor(hour)
+go <- tapply(masterdata$tripduration, hourie, mean)
+barplot(go,
+         main="Trip Duration by Month(Average)",
+         names.arg=c( "00", "01", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24"),
+         ylab="Average Duration", 
+         col=c("red", "white", "blue", "green", "black", "yellow", "purple", "grey", "pink", "orange"), 
+ )
+```
+
+### Trip Count by Hour
+```{r}
+hourtable <- table(hourie)
+barplot(hourtable)
+masterdata$hour <- hour
+```
+
+### CitiBike Availability by Station
+```{r}
+# Unique Departures and Arrivals for Each Citi Bike Station
+StationStartsAM <- as.data.frame(table(masterAM$start.station.name))
+StationEndsAM <- as.data.frame(table(masterAM$end.station.name))
+
+StationDataAM <- data.frame(masterAM$start.station.name)
+StationDataAM <- unique(StationDataAM)
+StationDataAM$numStarts <- StationStartsAM$Freq[match(StationDataAM$masterAM.start.station.name, StationStartsAM$Var1)]
+StationDataAM$numEnds <- StationEndsAM$Freq[match(StationDataAM$masterAM.start.station.name, StationEndsAM$Var1)]
+
+
+# Compute the difference (Arrivals > Departures)
+StationDataAM$difference <- StationDataAM$numEnds - StationDataAM$numStarts
+StationDataAM <- arrange(StationDataAM, desc(difference))
+StationDataAM <- na.omit(StationDataAM)
+
+# Top 10 stations that gain bikes throughout the morning
+
+TopTenSurplusAM <- head(StationDataAM, 10)
+
+
+# Top 10 stations that lose bikes throughout the morning 
+
+TopTenDeficitAM <-tail(StationDataAM, 10)
+TopTenDeficitAM <- arrange(TopTenDeficitAM, difference)
+
+
+#Replicate for PM times 
+
+
+# Unique Departures and Arrivals for Each Citi Bike Station
+StationStartsPM <- as.data.frame(table(masterPM$start.station.name))
+StationEndsPM <- as.data.frame(table(masterPM$end.station.name))
+
+StationDataPM <- data.frame(masterPM$start.station.name)
+StationDataPM <- unique(StationDataPM)
+StationDataPM$numStarts <- StationStartsPM$Freq[match(StationDataPM$masterPM.start.station.name, StationStartsPM$Var1)]
+StationDataPM$numEnds <- StationEndsPM$Freq[match(StationDataPM$masterPM.start.station.name, StationEndsPM$Var1)]
+
+
+# Compute the difference (Arrivals > Departures)
+StationDataPM$difference <- StationDataPM$numEnds - StationDataPM$numStarts
+StationDataPM <- arrange(StationDataPM, desc(difference))
+StationDataPM <- na.omit(StationDataPM)
+
+# Top 10 stations that gain bikes throughout the morning
+TopTenSurplusPM <- head(StationDataPM, 10)
+
+# Top 10 stations that lose bikes throughout the morning 
+
+TopTenDeficitPM <-tail(StationDataPM, 10)
+TopTenDeficitPM <- arrange(TopTenDeficitPM, difference)
+
+
+TopTenSurplusAM
+
+TopTenDeficitAM
+
+TopTenSurplusPM
+
+TopTenDeficitPM
+```
+
+#### Visualizations and Analyses
+```{r}
+# Top Ten gains in the morning 
+
+TenSurplusMorning <- ggplot(TopTenSurplusAM, aes(reorder(masterAM.start.station.name, - difference), difference)) +
+    geom_col() +
+    scale_x_discrete(label = function(x) stringr::str_trunc(x, 20)) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+TenSurplusMorning
+```
+
+this chart shows a high level of asymmetry among the bike stations with station "Broadwat & E 22 St" having 384 more arrivals than departures in the morning throughout the year.
+
+```{r}
+# Top Ten loses in the morning 
+TenDeficitMorning <- ggplot(TopTenDeficitAM, aes(reorder(masterAM.start.station.name,  difference), difference)) +
+    geom_col() +
+    scale_x_discrete(label = function(x) stringr::str_trunc(x, 20)) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+TenDeficitMorning
+```
+
+Asymmetric traffic patterns are also evident in the chart above, with station "8 Ave & W 31 St" experiencing 449 more departures than arrivals in the morning throughout the year. 
+
+```{r}
+# Top Ten gains in the afternoon 
+
+TenSurplusAfternoon<- ggplot(TopTenSurplusPM, aes(reorder(masterPM.start.station.name, - difference), difference)) +
+    geom_col() +
+    scale_x_discrete(label = function(x) stringr::str_trunc(x, 20)) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+TenSurplusAfternoon
+```
+
+The evidence of asymmetric traffic is also present in this chart, with station " 8 Ave & W 31 St " leading with 418 more arrivals than departures. Some symmetry between the two time periods is seen here with a loss of 449 bikes at this same station in the morning time period throughout the year. In fact, 8 of the top 10 stations that lose bikes in the morning period are present here gaining bikes. 
+
+```{r}
+# Top Ten loses in the afternoon 
+
+TenDeficitAfternoon <- ggplot(TopTenDeficitPM, aes(reorder(masterPM.start.station.name,  difference), difference)) +
+    geom_col() +
+    scale_x_discrete(label = function(x) stringr::str_trunc(x, 20)) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+TenDeficitAfternoon
+```
+
+In the chart for the top ten stations that experience losses all ten of the stations that experience overflow of bikes in the morning time perion are present here.
+
+### Weekdays vs. Weekends
+```{r}
+#create counts of data 
+# Unique Departures and Arrivals for Each Citi Bike Station for Week 
+StationStartsWeek <- as.data.frame(table(weekdayData$start.station.name))
+StationEndsWeek <- as.data.frame(table(weekdayData$end.station.name))
+
+StationDataWeek <- data.frame(weekdayData$start.station.name)
+StationDataWeek <- unique(StationDataWeek)
+StationDataWeek$numStarts <- StationStartsWeek$Freq[match(StationDataWeek$weekdayData.start.station.name, StationStartsWeek$Var1)]
+StationDataWeek$numEnds <- StationEndsWeek$Freq[match(StationDataWeek$weekdayData.start.station.name, StationEndsWeek$Var1)]
+
+
+# Compute the difference (Arrivals > Departures)
+StationDataWeek$difference <- StationDataWeek$numEnds - StationDataWeek$numStarts
+StationDataWeek <- arrange(StationDataWeek, desc(difference))
+StationDataWeek <- na.omit(StationDataWeek)
+
+# Top 10 stations that gain bikes throughout Weekdays
+
+TopTenSurplusWeek <- head(StationDataWeek, 10)
+
+
+# Top 10 stations that lose bikes throughout Weekend Mornings 
+
+TopTenDeficitWeek <-tail(StationDataWeek, 10)
+TopTenDeficitWeek <- arrange(TopTenDeficitWeek, difference)
+
+
+#create counts of data 
+# Unique Departures and Arrivals for Each Citi Bike Station for Weekend  
+StationStartsWeekend <- as.data.frame(table(weekendData$start.station.name))
+StationEndsWeekend <- as.data.frame(table(weekendData$end.station.name))
+
+StationDataWeekend <- data.frame(weekendData$start.station.name)
+StationDataWeekend <- unique(StationDataWeekend)
+StationDataWeekend$numStarts <- StationStartsWeekend$Freq[match(StationDataWeekend$weekendData.start.station.name, StationStartsWeekend$Var1)]
+StationDataWeekend$numEnds <- StationEndsWeekend$Freq[match(StationDataWeekend$weekendData.start.station.name, StationEndsWeekend$Var1)]
+
+
+# Compute the difference (Arrivals > Departures)
+StationDataWeekend$difference <- StationDataWeekend$numEnds - StationDataWeekend$numStarts
+StationDataWeekend <- arrange(StationDataWeekend, desc(difference))
+StationDataWeekend <- na.omit(StationDataWeekend)
+
+# Top 10 stations that gain bikes throughout Weekend Mornings 
+
+TopTenSurplusWeekend <- head(StationDataWeekend, 10)
+
+
+# Top 10 stations that lose bikes throughout Weekend Mornings 
+
+TopTenDeficitWeekend <-tail(StationDataWeekend, 10)
+TopTenDeficitWeekend <- arrange(TopTenDeficitWeekend, difference)
+```
+
+#### Visualizations and Analyses
+```{r}
+# Top Surplus During Weekday Mornings
+TenSurplusWeek <- ggplot(TopTenSurplusWeek, aes(reorder(weekdayData.start.station.name, - difference), difference)) +
+    geom_col() +
+    scale_x_discrete(label = function(x) stringr::str_trunc(x, 20)) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+TenSurplusWeek
+
+# Top Deficit during Week Mornings
+TenDeficitWeek <- ggplot(TopTenDeficitWeek, aes(reorder(weekdayData.start.station.name,  difference), difference)) +
+    geom_col() +
+    scale_x_discrete(label = function(x) stringr::str_trunc(x, 20)) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+TenDeficitWeek
+
+# Top Surplus During Weekend Mornings
+TenSurplusWeekend <- ggplot(TopTenSurplusWeekend, aes(reorder(weekendData.start.station.name, - difference), difference)) +
+    geom_col() +
+    scale_x_discrete(label = function(x) stringr::str_trunc(x, 20)) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+TenSurplusWeekend
+
+# Top Deficit during Weekend Mornings
+TenDeficitWeekend <- ggplot(TopTenDeficitWeekend, aes(reorder(weekendData.start.station.name,  difference), difference)) +
+    geom_col() +
+    scale_x_discrete(label = function(x) stringr::str_trunc(x, 20)) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+TenDeficitWeekend
+```
+
+Between the top deficit stations in the morning of the weekends and weekdays there is only one overlapping station: E 13th and Avenue A., further the highest deficit on weekends is around 40 (average 20 a day [40/2]) whereas during the week the highest is approximately 450(average 90 a day [450/5]). Therefore this analysis shows that there is much more asymmetry during the week as opposed to the weekend, when less people commute for work. This pattern holds true for top surplus stations in the mornings of the weekend and weekdays with no overlapping stations,and the top station during weekdays with a surplus of 375 (average 75 a day [375/5])compared to a top surplus of 55 on the weekend (average 28 a day [55/2]). In summary, this supports the hypothesis that asymmetry is mainly caused by commutes to work during the week. 
+
+### Station Utilization by User Type
+```{r}
+CountCustomerBroadway <- nrow(masterAM[masterAM$usertype == "Customer" & masterAM$start.station.name == "Broadway & E 22 St",])
+CountSubscriberBroadway <- nrow(masterAM[masterAM$usertype == "Subscriber" & masterAM$start.station.name == "Broadway & E 22 St",])
+CountCustomerNMoore <- nrow(masterPM[masterPM$usertype == "Customer" & masterPM$start.station.name == "North Moore St & Greenwich St",])
+CountSubscriberNMoore <- nrow(masterPM[masterPM$usertype == "Subscriber" & masterPM$start.station.name == "North Moore St & Greenwich St",])
+```
+
+For stations that are asymmetric, users tend to be "subscribers" as opposed to "customers". At the station "Broadway & E 22 St" of the 239 users who started trips there `r CountSubscriberBroadway` are subscribers while only `r CountCustomerBroadway`. For another station "North Moore St & Greenwich" there was only `r CountCustomerNMoore`customers while there was `r CountSubscriberNMoore` Subscribers. 
+
+### Map: Stations With AM Surplus
+#### Data Setup
+```{r}
+# Add longitude and latitude to the dataset
+
+startlatitude <- c(40.7403432,40.72019521,40.75510267, 40.76132983,40.75992262,40.72243797,40.7643971,40.74096374, 40.75724568, 40.70463334)
+
+TopTenSurplusAM$startlatitude <- startlatitude
+
+startlongitude <- c(-73.98955109,-74.01030064,-73.97498696
+,-73.97982001, -73.97648516, -74.00566443
+, -73.97371465, -73.98602213, -73.97805914
+, -74.01361706)
+
+TopTenSurplusAM$startlongitude <- startlongitude
+```
+
+#### Map
+```{r}
+#Map TopTenSurplus AM
+
+
+register_google(key = "AIzaSyDr6TG5wIRo6iXXvRbE0rV3n2EPx1jApRc")
+
+## get station info
+station.info <- TopTenSurplusAM %>%
+  group_by(masterAM.start.station.name) %>%
+  summarise(lat=as.numeric(startlatitude),
+            long=as.numeric(startlongitude),
+            difference = difference)
+
+
+## get map and plot station locations 
+newyork.map <- get_map(location= 'Lower Manhattan, New York', 
+                       maptype='roadmap', color='bw',source='google',zoom=12)
+
+ggmap(newyork.map) + 
+  geom_point(data=station.info,aes(x=long,y=lat,color= difference),size=5,alpha=0.75)+
+  scale_colour_gradient(high="red",low='green')+ 
+  theme(axis.ticks = element_blank(),axis.text = element_blank())+
+  xlab('')+ylab('')
+```
+
+As seen in the geographic groupings of the top asymmetric stations most of them are located in Lower Manhattan, specifically in areas like Midtown where there are many jobs which is true for pretty much all of these areas. Although this map only shows the top stations that gain bikes in the morning, this pattern is true for the asymmetric stations due to the overlap from the relationship between the stations. 
