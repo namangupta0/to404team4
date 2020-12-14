@@ -99,48 +99,40 @@ weekendData <- subset(masterAM, subset = (masterAM$numWeekday == "7" | masterAM$
 #Ride Distance by Maximum Temperature by Gender 
 ggplot(data = masterdata, aes(x = maxTemp, y = distMeters, colour = gender)) + geom_point() + labs(x = "Maximum Temperature", y = "Ride Distance (meters)", colour = "Gender")
 ggplot(data = masterdata, aes(x = maxTemp, y = distMeters, colour = gender)) + geom_smooth() + labs(x = "Maximum Temperature", y = "Ride Distance (meters)", colour = "Gender")
-ggplot(data = masterdata, aes(x = maxTemp, y = distMeters, colour = gender)) + geom_violin() + labs(x = "Maximum Temperature", y = "Ride Distance (meters)", colour = "Gender")
-ggplot(data = masterdata, aes(x = maxTemp, y = distMeters, colour = gender)) + geom_boxplot() + labs(x = "Maximum Temperature", y = "Ride Distance (meters)", colour = "Gender")
 #Ride Distance by Maximum Temperature by User Type
 ggplot(data = masterdata, aes(x = maxTemp, y = distMeters, colour = usertype)) + geom_point() + labs(x = "Maximum Temperature", y = "Ride Distance (meters)", colour = "User Type")
 ggplot(data = masterdata, aes(x = maxTemp, y = distMeters, colour = usertype)) + geom_smooth() + labs(x = "Maximum Temperature", y = "Ride Distance (meters)", colour = "User Type")
-ggplot(data = masterdata, aes(x = maxTemp, y = distMeters, colour = usertype)) + geom_violin() + labs(x = "Maximum Temperature", y = "Ride Distance (meters)", colour = "User Type")
-ggplot(data = masterdata, aes(x = maxTemp, y = distMeters, colour = usertype)) + geom_boxplot() + labs(x = "Maximum Temperature", y = "Ride Distance (meters)", colour = "User Type")
 #Ride Distance by Minimum Temperature by Gender
 ggplot(data = masterdata, aes(x = minTemp, y = distMeters, colour = gender)) + geom_point() + labs(x = "Minimum Temperature", y = "Ride Distance (meters)", colour = "Gender")
 ggplot(data = masterdata, aes(x = minTemp, y = distMeters, colour = gender)) + geom_smooth() + labs(x = "Minimum Temperature", y = "Ride Distance (meters)", colour = "Gender")
-ggplot(data = masterdata, aes(x = minTemp, y = distMeters, colour = gender)) + geom_violin() + labs(x = "Minimum Temperature", y = "Ride Distance (meters)", colour = "Gender")
-ggplot(data = masterdata, aes(x = minTemp, y = distMeters, colour = gender)) + geom_boxplot() + labs(x = "Minimum Temperature", y = "Ride Distance (meters)", colour = "Gender")
 #Ride Distance by Minimum Temperature by User Type
 ggplot(data = masterdata, aes(x = minTemp, y = distMeters, colour = usertype)) + geom_point() + labs(x = "Minimum Temperature", y = "Ride Distance (meters)", colour = "User Type")
 ggplot(data = masterdata, aes(x = minTemp, y = distMeters, colour = usertype)) + geom_smooth() + labs(x = "Minimum Temperature", y = "Ride Distance (meters)", colour = "User Type")
-ggplot(data = masterdata, aes(x = minTemp, y = distMeters, colour = usertype)) + geom_violin() + labs(x = "Minimum Temperature", y = "Ride Distance (meters)", colour = "User Type")
-ggplot(data = masterdata, aes(x = minTemp, y = distMeters, colour = usertype)) + geom_boxplot() + labs(x = "Minimum Temperature", y = "Ride Distance (meters)", colour = "User Type")
 ```
+
+From these line charts, we can see that non-subscribers/customers have longer trip distances than subscribers. A possibility is that most non-subscribers may be tourists who rent CitiBikes to tour the city, leading them to ride longer distances than subscribers, who presumably use CitiBike as a mode of transportation to and from work. 
+
+Additionally, we observe that female riders, on average, have longer trip durations than male riders. A possible explanation could be that male riders have a lower threshold for travel distance by bicycle before deciding their destination is far enough to take the subway or an Uber/Lyft instead.
 
 #### Ride Duration
 ```{r}
 #By Maximum Temperature By Gender
 ggplot(data = masterdata[masterdata$tripduration < 10000,], aes(x = maxTemp, y = tripduration, colour = gender)) + geom_point() + labs(x = "Maximum Temperature", y = "Trip Duration (seconds)", colour = "Gender")
 ggplot(data = masterdata[masterdata$tripduration < 10000,], aes(x = maxTemp, y = tripduration, colour = gender)) + geom_smooth() + labs(x = "Maximum Temperature", y = "Trip Duration (seconds)", colour = "Gender")
-ggplot(data = masterdata[masterdata$tripduration < 10000,], aes(x = maxTemp, y = tripduration, colour = gender)) + geom_violin() + labs(x = "Maximum Temperature", y = "Trip Duration (seconds)", colour = "Gender")
-ggplot(data = masterdata[masterdata$tripduration < 10000,], aes(x = maxTemp, y = tripduration, colour = gender)) + geom_boxplot() + labs(x = "Maximum Temperature", y = "Trip Duration (seconds)", colour = "Gender")
 #By Maximum Temperature By User Type
 ggplot(data = masterdata[masterdata$tripduration < 10000,], aes(x = maxTemp, y = tripduration, colour = usertype)) + geom_point() + labs(x = "Maximum Temperature", y = "Trip Duration (seconds)", colour = "User Type")
 ggplot(data = masterdata[masterdata$tripduration < 10000,], aes(x = maxTemp, y = tripduration, colour = usertype)) + geom_smooth() + labs(x = "Maximum Temperature", y = "Trip Duration (seconds)", colour = "User Type")
-ggplot(data = masterdata[masterdata$tripduration < 10000,], aes(x = maxTemp, y = tripduration, colour = usertype)) + geom_violin() + labs(x = "Maximum Temperature", y = "Trip Duration (seconds)", colour = "User Type")
-ggplot(data = masterdata[masterdata$tripduration < 10000,], aes(x = maxTemp, y = tripduration, colour = usertype)) + geom_boxplot() + labs(x = "Maximum Temperature", y = "Trip Duration (seconds)", colour = "User Type")
 #By Minimum Temperature By Gender
 ggplot(data = masterdata[masterdata$tripduration < 10000,], aes(x = minTemp, y = tripduration, colour = gender)) + geom_point() + labs(x = "Minimum Temperature", y = "Trip Duration (seconds)", colour = "Gender")
 ggplot(data = masterdata[masterdata$tripduration < 10000,], aes(x = minTemp, y = tripduration, colour = gender)) + geom_smooth() + labs(x = "Minimum Temperature", y = "Trip Duration (seconds)", colour = "Gender")
-ggplot(data = masterdata[masterdata$tripduration < 10000,], aes(x = minTemp, y = tripduration, colour = gender)) + geom_violin() + labs(x = "Minimum Temperature", y = "Trip Duration (seconds)", colour = "Gender")
-ggplot(data = masterdata[masterdata$tripduration < 10000,], aes(x = minTemp, y = tripduration, colour = gender)) + geom_boxplot() + labs(x = "Minimum Temperature", y = "Trip Duration (seconds)", colour = "Gender")
 #By Minimum Temperature By User Type
 ggplot(data = masterdata[masterdata$tripduration < 10000,], aes(x = minTemp, y = tripduration, colour = usertype)) + geom_point() + labs(x = "Minimum Temperature", y = "Trip Duration (seconds)", colour = "User Type")
 ggplot(data = masterdata[masterdata$tripduration < 10000,], aes(x = minTemp, y = tripduration, colour = usertype)) + geom_smooth() + labs(x = "Minimum Temperature", y = "Trip Duration (seconds)", colour = "User Type")
-ggplot(data = masterdata[masterdata$tripduration < 10000,], aes(x = minTemp, y = tripduration, colour = usertype)) + geom_violin() + labs(x = "Minimum Temperature", y = "Trip Duration (seconds)", colour = "User Type")
-ggplot(data = masterdata[masterdata$tripduration < 10000,], aes(x = minTemp, y = tripduration, colour = usertype)) + geom_boxplot() + labs(x = "Minimum Temperature", y = "Trip Duration (seconds)", colour = "User Type")
 ```
+
+Comparing the line charts sorted by gender and user type, it seems a large portion of the "Unknown" gender population could be customers (although we can't be sure). These could be tourists visiting the city taking longer trips.
+
+Additionally, we notice that male riders tend to have shorter trip durations than female riders. Considering the plots in the previous section that conveyed female riders tend to ride longer distances, we can reasonably assume their longer trip durations are due to longer ride distances.
 
 #### Total Rides
 ```{r}
@@ -165,59 +157,83 @@ masterdata %>%
     numRides = mean(n())
   ) %>%
   ggplot(aes(x = minTemp, y = numRides)) + geom_point() + labs(x = "Minimum Temperature (F)", y = "Average Number of CitiBike Rides")
-#By Day of Week by Temperature (Not super meaningful - keeping this here as a template)
+#Gender
 masterdata %>%
-  group_by(weekNum, numWeekday) %>%
+  group_by(gender, maxTemp) %>%
   summarise(
-    numRides = mean(n()),
-    temp = maxTemp
+    numRides = mean(n())
   ) %>%
-  ggplot(aes(x = temp, y = numRides)) + geom_boxplot() + transition_time(weekNum) + labs(title = "Week Number: {frame_time}")
+  ggplot(aes(x = maxTemp, y = numRides, colour = gender)) + geom_smooth() + labs(x = "Maximum Temperature (F)", y = "Average Number of CitiBike Rides")
+#User Type
+masterdata %>%
+  group_by(usertype, maxTemp) %>%
+  summarise(
+    numRides = mean(n())
+  ) %>%
+  ggplot(aes(x = maxTemp, y = numRides, colour = usertype)) + geom_smooth() + labs(x = "Maximum Temperature (F)", y = "Average Number of CitiBike Rides")
 ```
+
+According to the box plot, we can see that, on average, Wednesday is the busiest day for CitiBike. Additionally, the first and third quartiles are significantly closer together than they are on other days, meaning CitiBike can be fairly certain Wednesday will pretty much always be busy. 
+
+Dot plots for both minimum and maximum daily temperatures were created to see if either figure had a greater impact on a rider's decision to take a CitiBike trip, using these numbers as proxies for "Highs" and "Lows" reported by weather apps. The distributions for both graphs seem quite similar, with the most rides happening on days with a maximum temperature of roughly 75 degrees, and minimum temperature of 65 degrees.   
+
+The line charts show us that non-subscribers/customers are less sensitive to temperature fluctuations than subscribers, presumably because non-subscribers are likely tourists who have no choice but to tour the city, since they're only there for a limited amount of time. Subscribers, who are most likely residents of NYC, are much more sensitive to temperature fluctuations, as expected. Furthermore, if we break it up by gender, we see that female riders tend to be more sensitive to temperature fluctuations than male riders.  
 
 #### Speed
 ```{r}
 #Speed by Maximum Temperature by Gender
 ggplot(data = masterdata, aes(x = maxTemp, y = speedMetersperSec, colour = gender)) + geom_point() + labs(x = "Maximum Temperature", y = "Speed (meters/s)", colour = "Gender")
 ggplot(data = masterdata, aes(x = maxTemp, y = speedMetersperSec, colour = gender)) + geom_smooth() + labs(x = "Maximum Temperature", y = "Speed (meters/s)", colour = "Gender")
-ggplot(data = masterdata, aes(x = maxTemp, y = speedMetersperSec, colour = gender)) + geom_violin() + labs(x = "Maximum Temperature", y = "Speed (meters/s)", colour = "Gender")
-ggplot(data = masterdata, aes(x = maxTemp, y = speedMetersperSec, colour = gender)) + geom_boxplot() + labs(x = "Maximum Temperature", y = "Speed (meters/s)", colour = "Gender")
 #Speed by Maximum Temperature by User Type
 ggplot(data = masterdata, aes(x = maxTemp, y = speedMetersperSec, colour = usertype)) + geom_point() + labs(x = "Maximum Temperature", y = "Speed (meters/s)", colour = "User Type")
 ggplot(data = masterdata, aes(x = maxTemp, y = speedMetersperSec, colour = usertype)) + geom_smooth() + labs(x = "Maximum Temperature", y = "Speed (meters/s)", colour = "User Type")
-ggplot(data = masterdata, aes(x = maxTemp, y = speedMetersperSec, colour = usertype)) + geom_violin() + labs(x = "Maximum Temperature", y = "Speed (meters/s)", colour = "User Type")
-ggplot(data = masterdata, aes(x = maxTemp, y = speedMetersperSec, colour = usertype)) + geom_boxplot() + labs(x = "Maximum Temperature", y = "Speed (meters/s)", colour = "User Type")
 #Speed by Minimum Temperature by Gender
 ggplot(data = masterdata, aes(x = minTemp, y = speedMetersperSec, colour = gender)) + geom_point() + labs(x = "Minimum Temperature", y = "Speed (meters/s)", colour = "Gender")
 ggplot(data = masterdata, aes(x = minTemp, y = speedMetersperSec, colour = gender)) + geom_smooth() + labs(x = "Minimum Temperature", y = "Speed (meters/s)", colour = "Gender")
-ggplot(data = masterdata, aes(x = minTemp, y = speedMetersperSec, colour = gender)) + geom_violin() + labs(x = "Minimum Temperature", y = "Speed (meters/s)", colour = "Gender")
-ggplot(data = masterdata, aes(x = minTemp, y = speedMetersperSec, colour = gender)) + geom_boxplot() + labs(x = "Minimum Temperature", y = "Speed (meters/s)", colour = "Gender")
 #Speed by Minimum Temperature by User Type
 ggplot(data = masterdata, aes(x = minTemp, y = speedMetersperSec, colour = usertype)) + geom_point() + labs(x = "Minimum Temperature", y = "Speed (meters/s)", colour = "User Type")
 ggplot(data = masterdata, aes(x = minTemp, y = speedMetersperSec, colour = usertype)) + geom_smooth() + labs(x = "Minimum Temperature", y = "Speed (meters/s)", colour = "User Type")
-ggplot(data = masterdata, aes(x = minTemp, y = speedMetersperSec, colour = usertype)) + geom_violin() + labs(x = "Minimum Temperature", y = "Speed (meters/s)", colour = "User Type")
-ggplot(data = masterdata, aes(x = minTemp, y = speedMetersperSec, colour = usertype)) + geom_boxplot() + labs(x = "Minimum Temperature", y = "Speed (meters/s)", colour = "User Type")
 ```
+
+Interestingly enough, our previous hypothesis - riders whose genders are "Unknown" are mostly non-subscribers - is inconsistent with the data presented in the graphs above. As we look at average speed for the "Unknown" gender group, we see that their average speed is significantly slower than that of riders who indicated they're either male or female. However, the line chart that groups riders by user type shows subscribers actually ride much faster than non-subscribers, which is to be expected, assuming most of the non-subscriber population consists of tourists.
+
+Additionally, male riders tend to ride CitiBikes faster than female riders. A possible behavioral explanation to this pattern could be that, assuming male riders are more sensitive to ride distance in their decision to take either a CitiBike or subway/Uber/Lyft (as hypothesized in the "Ride Duration" section), they may have a tendency to feel more rushed in completing what they deem to be a "short trip," leading them to ride faster; or, male riders could just be less careful when riding. There are endless possibilities for what could be causing this pattern.  
+
+Lastly, the sensitivity of these rider groups to temperature doesn't seem to differ when it comes to speed.
 
 #### Station Utilization
 ```{r}
-masterdata %>%
+#Data Setup
+startStationData <- masterdata %>%
   group_by(tempFeel, start.station.id) %>%
   summarise(
     numRides = n()
   ) %>%
   arrange(desc(numRides)) %>%
   slice(1:5) %>%
-  ggplot(aes(x = tempFeel, y = numRides, colour = start.station.id )) + geom_boxplot()
+  ggplot(aes(x = reorder(start.station.id, numRides, na.rm = TRUE), y = numRides)) + geom_col() + transition_states(tempFeel, transition_length = 2, state_length = 1) + enter_fade() + exit_shrink() + ease_aes('sine-in-out') + labs(title = "Weather Feel: {closest_state}") + labs(x = "Start Station ID", y = "Number of Rides")
 
-masterdata %>%
+endStationData <- masterdata %>%
   group_by(tempFeel, end.station.id) %>%
   summarise(
-    numRides = n()
+    numRides = mean(n())
   ) %>%
+  arrange(desc(numRides)) %>%
   slice(1:5) %>%
-  ggplot(aes(x = reorder(end.station.id, numRides, na.rm = TRUE), y = numRides)) + geom_boxplot() + transition_states(tempFeel, transition_length = 2, state_length = 1) + enter_fade() + exit_shrink() + ease_aes('sine-in-out') + labs(title = "Weather Feel: {closest_state}")
+  ggplot(aes(x = reorder(end.station.id, numRides, na.rm = TRUE), y = numRides)) + geom_col() + transition_states(tempFeel, transition_length = 2, state_length = 1) + enter_fade() + exit_shrink() + ease_aes('sine-in-out') + labs(title = "Weather Feel: {closest_state}") + labs(x = "End Station ID", y = "Number of Rides")
 ```
+
+```{r}
+#Start Station Chart
+animate(startStationData)
+```
+
+```{r}
+#End Station Chart
+animate(endStationData)
+```
+
+From these animations, we can see that stations 3255, 497, 519, 426, and 514 tend to be the destination for many people when the temperatures get hot. These could potentially be places where pools or other fun outside activities reside. We also see that on hot days, there are many people who depart from stations 497, 519, 514, 459, and 426. No causal conclusions can be drawn from these visualizations, but they can show us what stations tend to be busier at different temperature levels. 
 
 ### Precipitation
 #### Check Data
