@@ -90,7 +90,82 @@ weekdayData <- subset(masterAM, subset = (masterAM$numWeekday != "7" & masterAM$
 weekendData <- subset(masterAM, subset = (masterAM$numWeekday == "7" | masterAM$numWeekday == "1"))
 ```
 
+# Data Exploration
+
+```{r}
+#create column for trip duration in minutes
+masterdata$tripdurationmin <- masterdata$tripduration / 60
+
+#create Mode function to find the most common levels within variables
+Mode <- function(x) {
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+
+#apply Mode function to find the most common levels within variables
+#Gender mode
+Mode(masterdata$gender)
+#Start station modes
+Mode(masterdata$start.station.name)
+#End station mode
+Mode(masterdata$end.station.name)
+#BikeID mode
+Mode(masterdata$bikeid)
+#Birth year mode
+Mode(masterdata$birth.year)
+#User type mode
+Mode(masterdata$usertype)
+
+#Most frequent age
+2020 - Mode(masterdata$birth.year)
+
+#Longest bike ride
+max(masterdata$tripdurationmin)
+
+#Mean trip duration by gender
+tapply(masterdata$tripdurationmin, masterdata$gender, mean)
+
+#Mean trip duration by usertype
+tapply(masterdata$tripdurationmin, masterdata$usertype, mean)
+
+#How many times did a rider forget to return a bike? I am defining this using more than 15 hours of rental = 900 minutes
+nrow(masterdata[masterdata$tripdurationmin > 900 ,])
+```
+
 # Data Analysis
+
+## Patterns in the ride history
+
+Is there any correlation between a rider's birth year (age) and the length of their rides? How do usertypes and genders factor into this potential correlation?
+```{r}
+ggplot(data=masterdata, aes(x=birth.year,y=tripdurationmin, colour=gender)) + geom_point()
+
+#limiting to below 2500 minutes to make visual more legible
+ggplot(data=masterdata[masterdata$tripdurationmin <= 2500,], aes(x=birth.year,y=tripdurationmin, colour=gender)) + geom_point()
+ggplot(data=masterdata[masterdata$tripdurationmin <= 2500,], aes(x=birth.year,y=tripdurationmin, colour=usertype)) + geom_point()
+```
+The first plot is not very easy to read, as the outliers near the top end of the "tripdurationmin" range are making the graph scale hard to interpret; thus, I limit the range for following visualizations. An interesting insight from the next visualization is that, while most riders are born in recent years, the few older riders tend to use the bikes for far shorter rides on an aggregate level. Gender does not seem to play much role here. In the final plot, it is interesting to note that the older riders that use CitiBike tend to be subscribers more often than customers.
+
+Which gender had the most rides?
+```{r}
+ggplot(data=masterdata, aes(x=gender)) + geom_bar()
+```
+Males had the most rides.
+
+What is the distribution of trip duration as it relates to gender and usertype?
+```{r}
+ggplot(data=masterdata, aes(x=gender,y=tripdurationmin)) + geom_boxplot()
+
+#limiting to below 100 minutes to make visual more legible
+ggplot(data=masterdata[masterdata$tripdurationmin <= 100,], aes(x=gender,y=tripdurationmin)) + geom_boxplot()
+
+ggplot(data=masterdata[masterdata$tripdurationmin <= 100,], aes(x=usertype,y=tripdurationmin)) + geom_boxplot()
+
+ggplot(data=masterdata[masterdata$tripdurationmin <= 100,], aes(x=gender,y=tripdurationmin)) + geom_violin()
+
+ggplot(data=masterdata[masterdata$tripdurationmin <= 100,], aes(x=usertype,y=tripdurationmin)) + geom_violin()
+```
+This set of visualizations makes it clear that, although there is an extensive range of tripduration lengths, the bulk of the distribution is concentrated within less than 100 minutes. Within genders, the male rides are more tightly distributed around their median than female rides are. Male rides, on average, are slightly shorter. Within usertypes, customers on average have higher average trip durations than subscribers. Many hypotheses can be formed as to why these comparisons are as such, but they can not be tested using this data set. For example, maybe customers tend to be travelers or occasional leisure riders who use the bikes on a one-off basis and choose to take their time, while subscribers may be regularly using these bikes to quickly commute to and from work, thus resulting in shorter ride lengths and a tighter distribution around the mean. However, again, these are merely hypotheses that come to mind when looking at the visualization, but these are not entirely supported by the data.
 
 ## Weather
 ### Temperature
@@ -729,3 +804,7 @@ ggmap(newyork.map) +
 ```
 
 As seen in the geographic groupings of the top asymmetric stations most of them are located in Lower Manhattan, specifically in areas like Midtown where there are many jobs which is true for pretty much all of these areas. Although this map only shows the top stations that gain bikes in the morning, this pattern is true for the asymmetric stations due to the overlap from the relationship between the stations. 
+
+# RShiny Dashboard Link
+This is the link to our dashboard. It displays an error for approximately two seconds while loading the large dataset, but then it will work as desired.
+https://namangupta0.shinyapps.io/to404team4/
