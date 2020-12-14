@@ -132,6 +132,75 @@ tapply(masterdata$tripdurationmin, masterdata$usertype, mean)
 nrow(masterdata[masterdata$tripdurationmin > 900 ,])
 ```
 
+**Average and Median Trip Duration**
+```{r}
+# Average
+mean(citi_sample$tripduration)
+# Median
+median(citi_sample$tripduration)
+```
+The average trip lasts a little over 16 minutes, but the median trip duration is only around 10 minutes (there are likely long trips that are skewing the data)
+
+**Average and Median Rider Birth Year**
+```{r}
+# Average
+mean(citi_sample$birth.year)
+# Median
+median(citi_sample$birth.year)
+```
+The average rider is ~39 years old
+
+**Number of Bikes in The Sample**
+```{r}
+length(levels(citi_sample$bikeid))
+```
+
+**Percent Customer vs. Subscriber**
+```{r}
+# Number of Customers in Sample
+numCustomers <- nrow(citi_sample[citi_sample$usertype == "Customer", ])
+# Number of Subscribers in Sample
+numSubscribers <- nrow(citi_sample[citi_sample$usertype == "Subscriber", ])
+# Total Users in Sample
+totalUsers <- numCustomers + numSubscribers
+```
+`r numCustomers / totalUsers * 100`% of Users are Customers
+`r numSubscribers / totalUsers * 100`% of Users are Subscribers
+
+**Percent Male/Female**
+```{r}
+# Number of Males in Sample
+numMale <- nrow(citi_sample[citi_sample$gender == "1", ])
+# Number of Females in Sample
+numFemale <- nrow(citi_sample[citi_sample$gender == "2", ])
+# Total People in Sample
+totalPeople <- numCustomers + numSubscribers
+```
+`r numMale / totalPeople * 100`% of Riders are Male
+`r numFemale / totalPeople * 100`% of Riders are Female
+
+**Number of Stations in Sample (Start and End)**
+```{r}
+# Start Stations
+length(levels(citi_sample$start.station.name))
+# End Stations
+length(levels(citi_sample$end.station.name))
+```
+Discrepancy in number of start and stop stations likely caused by variance caused by random sample
+
+**Average Trip Duration by Start Station**
+```{r}
+barplot(tapply(citi_sample$tripduration, citi_sample$start.station.name, mean, na.rm = TRUE))
+```
+Some stations have significantly higher trip duration than the expected average of `r mean(citi_sample$tripduration)` seconds. This may signal that at some of these stations bikes are being lost or possibly not returned.
+
+**Average Trip Duration by Month**
+```{r}
+barplot(tapply(citi_sample$tripduration, citi_sample$starttime, mean, na.rm = TRUE))
+```
+It seems that regardless of month the average trip durations vary around the same level. The number of trips may change, but trip duration is relatively consistent.
+
+
 # Data Analysis
 
 ## Patterns in the ride history
