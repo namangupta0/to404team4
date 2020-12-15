@@ -173,11 +173,11 @@ totalUsers <- numCustomers + numSubscribers
 **Percent Male/Female**
 ```{r}
 # Number of Males in Sample
-numMale <- nrow(masterdata[masterdata$gender == 1, ])
+numMale <- nrow(masterdata[masterdata$gender == "Male", ])
 # Number of Females in Sample
-numFemale <- nrow(masterdata[masterdata$gender == 2, ])
+numFemale <- nrow(masterdata[masterdata$gender == "Female", ])
 # Number of Unknowns in Sample
-numUnknown <- nrow(masterdata[masterdata$gender == 0, ])
+numUnknown <- nrow(masterdata[masterdata$gender == "Unknown", ])
 # Total People in Sample
 totalPeople <- numMale + numFemale + numUnknown
 ```
