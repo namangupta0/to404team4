@@ -630,6 +630,42 @@ barplot(hourtable)
 masterdata$hour <- hour
 ```
 
+### Plots of Different Start and End Stations
+```{r}
+masterdata1 <- masterdata
+masterdata1$dayofweek <- weekdays(masterdata1$startDate)
+
+#first, let's create a new column for our function
+masterdata1$diffstation <- ifelse(as.character(masterdata1$start.station.name) == as.character(masterdata1$end.station.name),TRUE,FALSE)
+
+#now, let's plot some critical differences
+df <- masterdata1 %>% group_by(usertype) %>% count(diffstation) %>% mutate(Percent = n / sum(n)*100)
+ggplot(df, aes(x = usertype, y = Percent, fill = diffstation))+
+    geom_bar(stat = "identity")+
+    geom_text(aes(label = paste(Percent,"%"), y = Percent), 
+          position = position_stack(vjust = 0.5))+
+    coord_flip()+
+    labs(x = "User Type", y = "Percentage",fill = "Different Station?")
+
+#now, let's plot some critical differences
+df <- masterdata1 %>% group_by(dayofweek) %>% count(diffstation) %>% mutate(Percent = n / sum(n)*100)
+ggplot(df, aes(x = dayofweek, y = Percent, fill = diffstation))+
+      geom_bar(stat = "identity")+
+      geom_text(aes(label = paste(Percent,"%"), y = Percent), 
+          position = position_stack(vjust = 0.5))+
+  coord_flip()+
+  labs(x = "Day Of Week", y = "Percentage",fill = "Different Station?")
+
+#i want to map by gender as well
+df <- masterdata1 %>% group_by(gender) %>% count(diffstation) %>% mutate(Percent = n / sum(n)*100)
+ggplot(df, aes(x = gender, y = Percent, fill = diffstation))+
+  geom_bar(stat = "identity")+
+  geom_text(aes(label = paste(Percent,"%"), y = Percent), 
+          position = position_stack(vjust = 0.5))+
+  coord_flip()+
+  labs(x = "Gender", y = "Percentage",fill = "Different Station?")
+```
+
 ### CitiBike Availability by Station
 ```{r}
 # Unique Departures and Arrivals for Each Citi Bike Station
