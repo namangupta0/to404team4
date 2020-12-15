@@ -173,15 +173,18 @@ totalUsers <- numCustomers + numSubscribers
 **Percent Male/Female**
 ```{r}
 # Number of Males in Sample
-numMale <- nrow(masterdata[masterdata$gender == "1", ])
+numMale <- nrow(masterdata[masterdata$gender == 1, ])
 # Number of Females in Sample
-numFemale <- nrow(masterdata[masterdata$gender == "2", ])
+numFemale <- nrow(masterdata[masterdata$gender == 2, ])
+# Number of Unknowns in Sample
+numUnknown <- nrow(masterdata[masterdata$gender == 0, ])
 # Total People in Sample
-totalPeople <- numCustomers + numSubscribers
+totalPeople <- numMale + numFemale + numUnknown
 ```
 
 `r numMale / totalPeople * 100`% of Riders are Male
 `r numFemale / totalPeople * 100`% of Riders are Female
+`r numUnknown / totalPeople * 100`% of Riders are Unknown
 
 **Number of Stations in Sample (Start and End)**
 ```{r}
@@ -702,7 +705,7 @@ TenSurplusMorning <- ggplot(TopTenSurplusAM, aes(reorder(masterAM.start.station.
 TenSurplusMorning
 ```
 
-this chart shows a high level of asymmetry among the bike stations with station "Broadwat & E 22 St" having 384 more arrivals than departures in the morning throughout the year.
+This chart shows a high level of asymmetry among the bike stations with station "Broadwat & E 22 St" having 384 more arrivals than departures in the morning throughout the year.
 
 ```{r}
 # Top Ten loses in the morning 
