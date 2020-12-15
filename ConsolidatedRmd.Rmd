@@ -135,77 +135,83 @@ nrow(masterdata[masterdata$tripdurationmin > 900 ,])
 **Average and Median Trip Duration**
 ```{r}
 # Average
-mean(citi_sample$tripduration)
+mean(masterdata$tripduration)
 # Median
-median(citi_sample$tripduration)
+median(masterdata$tripduration)
 ```
+
 The average trip lasts a little over 16 minutes, but the median trip duration is only around 10 minutes (there are likely long trips that are skewing the data)
 
 **Average and Median Rider Birth Year**
 ```{r}
 # Average
-mean(citi_sample$birth.year)
+mean(masterdata$birth.year)
 # Median
-median(citi_sample$birth.year)
+median(masterdata$birth.year)
 ```
+
 The average rider is ~39 years old
 
 **Number of Bikes in The Sample**
 ```{r}
-length(levels(citi_sample$bikeid))
+length(levels(masterdata$bikeid))
 ```
 
 **Percent Customer vs. Subscriber**
 ```{r}
 # Number of Customers in Sample
-numCustomers <- nrow(citi_sample[citi_sample$usertype == "Customer", ])
+numCustomers <- nrow(masterdata[masterdata$usertype == "Customer", ])
 # Number of Subscribers in Sample
-numSubscribers <- nrow(citi_sample[citi_sample$usertype == "Subscriber", ])
+numSubscribers <- nrow(masterdata[masterdata$usertype == "Subscriber", ])
 # Total Users in Sample
 totalUsers <- numCustomers + numSubscribers
 ```
+
 `r numCustomers / totalUsers * 100`% of Users are Customers
 `r numSubscribers / totalUsers * 100`% of Users are Subscribers
 
 **Percent Male/Female**
 ```{r}
 # Number of Males in Sample
-numMale <- nrow(citi_sample[citi_sample$gender == "1", ])
+numMale <- nrow(masterdata[masterdata$gender == "1", ])
 # Number of Females in Sample
-numFemale <- nrow(citi_sample[citi_sample$gender == "2", ])
+numFemale <- nrow(masterdata[masterdata$gender == "2", ])
 # Total People in Sample
 totalPeople <- numCustomers + numSubscribers
 ```
+
 `r numMale / totalPeople * 100`% of Riders are Male
 `r numFemale / totalPeople * 100`% of Riders are Female
 
 **Number of Stations in Sample (Start and End)**
 ```{r}
 # Start Stations
-length(levels(citi_sample$start.station.name))
+length(levels(masterdata$start.station.name))
 # End Stations
-length(levels(citi_sample$end.station.name))
+length(levels(masterdata$end.station.name))
 ```
+
 Discrepancy in number of start and stop stations likely caused by variance caused by random sample
 
 **Average Trip Duration by Start Station**
 ```{r}
-barplot(tapply(citi_sample$tripduration, citi_sample$start.station.name, mean, na.rm = TRUE))
+barplot(tapply(masterdata$tripduration, masterdata$start.station.name, mean, na.rm = TRUE))
 ```
-Some stations have significantly higher trip duration than the expected average of `r mean(citi_sample$tripduration)` seconds. This may signal that at some of these stations bikes are being lost or possibly not returned.
+
+Some stations have significantly higher trip duration than the expected average of `r mean(masterdata$tripduration)` seconds. This may signal that at some of these stations bikes are being lost or possibly not returned.
 
 **Average Trip Duration by Month**
 ```{r}
-barplot(tapply(citi_sample$tripduration, citi_sample$starttime, mean, na.rm = TRUE))
+barplot(tapply(masterdata$tripduration, masterdata$startTime, mean, na.rm = TRUE))
 ```
-It seems that regardless of month the average trip durations vary around the same level. The number of trips may change, but trip duration is relatively consistent.
 
+It seems that regardless of month the average trip durations vary around the same level. The number of trips may change, but trip duration is relatively consistent.
 
 # Data Analysis
 
 ## Patterns in the ride history
 
-Is there any correlation between a rider's birth year (age) and the length of their rides? How do usertypes and genders factor into this potential correlation?
+**Is there any correlation between a rider's birth year (age) and the length of their rides? How do usertypes and genders factor into this potential correlation?**
 ```{r}
 ggplot(data=masterdata, aes(x=birth.year,y=tripdurationmin, colour=gender)) + geom_point()
 
@@ -213,15 +219,17 @@ ggplot(data=masterdata, aes(x=birth.year,y=tripdurationmin, colour=gender)) + ge
 ggplot(data=masterdata[masterdata$tripdurationmin <= 2500,], aes(x=birth.year,y=tripdurationmin, colour=gender)) + geom_point()
 ggplot(data=masterdata[masterdata$tripdurationmin <= 2500,], aes(x=birth.year,y=tripdurationmin, colour=usertype)) + geom_point()
 ```
+
 The first plot is not very easy to read, as the outliers near the top end of the "tripdurationmin" range are making the graph scale hard to interpret; thus, I limit the range for following visualizations. An interesting insight from the next visualization is that, while most riders are born in recent years, the few older riders tend to use the bikes for far shorter rides on an aggregate level. Gender does not seem to play much role here. In the final plot, it is interesting to note that the older riders that use CitiBike tend to be subscribers more often than customers.
 
-Which gender had the most rides?
+**Which gender had the most rides?**
 ```{r}
 ggplot(data=masterdata, aes(x=gender)) + geom_bar()
 ```
+
 Males had the most rides.
 
-What is the distribution of trip duration as it relates to gender and usertype?
+**What is the distribution of trip duration as it relates to gender and usertype?**
 ```{r}
 ggplot(data=masterdata, aes(x=gender,y=tripdurationmin)) + geom_boxplot()
 
@@ -234,6 +242,7 @@ ggplot(data=masterdata[masterdata$tripdurationmin <= 100,], aes(x=gender,y=tripd
 
 ggplot(data=masterdata[masterdata$tripdurationmin <= 100,], aes(x=usertype,y=tripdurationmin)) + geom_violin()
 ```
+
 This set of visualizations makes it clear that, although there is an extensive range of tripduration lengths, the bulk of the distribution is concentrated within less than 100 minutes. Within genders, the male rides are more tightly distributed around their median than female rides are. Male rides, on average, are slightly shorter. Within usertypes, customers on average have higher average trip durations than subscribers. Many hypotheses can be formed as to why these comparisons are as such, but they can not be tested using this data set. For example, maybe customers tend to be travelers or occasional leisure riders who use the bikes on a one-off basis and choose to take their time, while subscribers may be regularly using these bikes to quickly commute to and from work, thus resulting in shorter ride lengths and a tighter distribution around the mean. However, again, these are merely hypotheses that come to mind when looking at the visualization, but these are not entirely supported by the data.
 
 ## Weather
